@@ -1,0 +1,22 @@
+{
+    "name": "muxx/dplr",
+    "description": "Object oriented deployer based on pssh_extension + libpssh",
+    "type": "library",
+    "homepage": "https://github.com/muxx/dplr",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ilyas Salikhov",
+            "email": "me@salikhovilyas.ru",
+            "homepage": "http://salikhovilyas.ru"
+        }
+    ],
+    "require": {
+        "ext-pssh": "*"
+    },
+    "autoload": {
+        "psr-0": {
+            "Dplr": "src/"
+        }
+    }
+}
