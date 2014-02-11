@@ -1,21 +1,17 @@
 <?php
 
-namespace Dplr\Task;
-
-use Dplr\TaskReport\DownloadTaskReport;
+namespace Dplr\TaskReport;
 
 /**
- * Task which download file from remote server
+ * Information about download task copying remote file from some server
  *
  * @author Ilyas Salikhov <me@salikhovilyas.ru>
  */
-class DownloadTask extends AbstractTask
+class DownloadTaskReport extends AbstractTaskReport
 {
-    protected
-        $localFile,
-        $remoteFile;
+    protected $localFile, $remoteFile;
 
-    public function __construct($remoteFile = null, $localFile = null, $serverGroup = null, $timeout = null)
+    public function __construct($remoteFile = null, $localFile = null, $server = null)
     {
         if ($remoteFile) {
             $this->setRemoteFile($remoteFile);
@@ -23,7 +19,12 @@ class DownloadTask extends AbstractTask
         if ($localFile) {
             $this->setLocalFile($localFile);
         }
-        parent::__construct($serverGroup, $timeout);
+        parent::__construct($server);
+    }
+
+    public function getPsshTaskType()
+    {
+        return PSSH_TASK_TYPE_COPY;
     }
 
     /**
@@ -42,7 +43,7 @@ class DownloadTask extends AbstractTask
      *
      * @access public
      * @param mixed $localFile
-     * @return UploadTask
+     * @return UploadTaskReport
      */
     public function setLocalFile($localFile)
     {
@@ -67,7 +68,7 @@ class DownloadTask extends AbstractTask
      *
      * @access public
      * @param mixed $remoteFile
-     * @return UploadTask
+     * @return UploadTaskReport
      */
     public function setRemoteFile($remoteFile)
     {
@@ -76,31 +77,16 @@ class DownloadTask extends AbstractTask
         return $this;
     }
 
-    /**
-     * Add task to pssh task list for server
-     *
-     * @access public
-     * @abstract
-     * @return integer
-     */
-    protected function _addToPsshTaskList(&$psshTaskList, $server)
+    public function __toString()
     {
-        $result = pssh_copy_from_server(
-            $psshTaskList,
-            $server,
-            $this->getRemoteFile(),
-            $this->getLocalFile(),
-            $this->getTimeout()
-        );
+        $str =
+            'CPR '
+            . ($this->getRemoteFile() ? $this->getRemoteFile() : '')
+            . ' -> '
+            . ($this->getLocalFile() ? $this->getLocalFile() : '')
+            . ($this->getServer() ? ' (' . $this->getServer() . ')' : '')
+            ;
 
-        if ($result) {
-            return new DownloadTaskReport(
-                $this->getRemoteFile(),
-                $this->getLocalFile(),
-                $server
-            );
-        }
-
-        return false;
+        return $str;
     }
 }

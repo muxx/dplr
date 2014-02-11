@@ -2,6 +2,8 @@
 
 namespace Dplr\Task;
 
+use Dplr\TaskReport\CommandTaskReport;
+
 /**
  * Task which execute command on remote server
  *
@@ -17,11 +19,6 @@ class CommandTask extends AbstractTask
             $this->setCommand($command);
         }
         parent::__construct($serverGroup, $timeout);
-    }
-
-    public function getPsshType()
-    {
-        return PSSH_TASK_TYPE_EXEC;
     }
 
     /**
@@ -49,4 +46,19 @@ class CommandTask extends AbstractTask
         return $this;
     }
 
+    /**
+     * Add task to pssh task list for server
+     *
+     * @access public
+     * @abstract
+     * @return integer
+     */
+    protected function _addToPsshTaskList(&$psshTaskList, $server)
+    {
+        if (pssh_tasklist_add($psshTaskList, $server, $this->getCommand(), $this->getTimeout())) {
+            return new CommandTaskReport($this->getCommand(), $server);
+        }
+
+        return false;
+    }
 }

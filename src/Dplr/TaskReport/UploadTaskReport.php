@@ -1,21 +1,17 @@
 <?php
 
-namespace Dplr\Task;
-
-use Dplr\TaskReport\UploadTaskReport;
+namespace Dplr\TaskReport;
 
 /**
- * Task which upload file on remote server
+ * Information about upload task copying local file to some server
  *
  * @author Ilyas Salikhov <me@salikhovilyas.ru>
  */
-class UploadTask extends AbstractTask
+class UploadTaskReport extends AbstractTaskReport
 {
-    protected
-        $localFile,
-        $remoteFile;
+    protected $localFile, $remoteFile;
 
-    public function __construct($localFile = null, $remoteFile = null, $serverGroup = null, $timeout = null)
+    public function __construct($localFile = null, $remoteFile = null, $server = null)
     {
         if ($localFile) {
             $this->setLocalFile($localFile);
@@ -23,7 +19,12 @@ class UploadTask extends AbstractTask
         if ($remoteFile) {
             $this->setRemoteFile($remoteFile);
         }
-        parent::__construct($serverGroup, $timeout);
+        parent::__construct($server);
+    }
+
+    public function getPsshTaskType()
+    {
+        return PSSH_TASK_TYPE_COPY;
     }
 
     /**
@@ -42,7 +43,7 @@ class UploadTask extends AbstractTask
      *
      * @access public
      * @param mixed $localFile
-     * @return UploadTask
+     * @return UploadTaskReport
      */
     public function setLocalFile($localFile)
     {
@@ -67,7 +68,7 @@ class UploadTask extends AbstractTask
      *
      * @access public
      * @param mixed $remoteFile
-     * @return UploadTask
+     * @return UploadTaskReport
      */
     public function setRemoteFile($remoteFile)
     {
@@ -76,31 +77,16 @@ class UploadTask extends AbstractTask
         return $this;
     }
 
-    /**
-     * Add task to pssh task list for server
-     *
-     * @access public
-     * @abstract
-     * @return integer
-     */
-    protected function _addToPsshTaskList(&$psshTaskList, $server)
+    public function __toString()
     {
-        $result = pssh_copy_to_server(
-            $psshTaskList,
-            $server,
-            $this->getLocalFile(),
-            $this->getRemoteFile(),
-            $this->getTimeout()
-        );
+        $str =
+            'CPY '
+            . ($this->getLocalFile() ? $this->getLocalFile() : '')
+            . ' -> '
+            . ($this->getRemoteFile() ? $this->getRemoteFile() : '')
+            . ($this->getServer() ? ' (' . $this->getServer() . ')' : '')
+            ;
 
-        if ($result) {
-            return new UploadTaskReport(
-                $this->getLocalFile(),
-                $this->getRemoteFile(),
-                $server
-            );
-        }
-
-        return false;
+        return $str;
     }
 }
