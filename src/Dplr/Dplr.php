@@ -4,6 +4,9 @@ namespace Dplr;
 
 use Dplr\Exception\ConnectionFailedException;
 use Dplr\Task\AbstractTask;
+use Dplr\Task\CommandTask;
+use Dplr\Task\DownloadTask;
+use Dplr\Task\UploadTask;
 use Dplr\TaskReport\AbstractTaskReport;
 
 /**
@@ -34,6 +37,12 @@ class Dplr
     *   PSSH_TASK_TYPE_EXEC
     *
     */
+
+    const STATE_REGISTER_SERVERS = 'Register servers';
+    const STATE_CONNECT_TO_SERVERS = 'Connect to servers';
+    const STATE_PREPARE_TASKS = 'Prepare tasks';
+    const STATE_RUN_TASKS = 'Run tasks';
+    const STATE_BUILD_REPORT = 'Build report';
 
     protected
         $pssh,
@@ -134,6 +143,50 @@ class Dplr
     }
 
     /**
+     * Alias for adding CommandTask
+     *
+     * @access public
+     * @param mixed $command (default: null)
+     * @param mixed $serverGroup (default: null)
+     * @param mixed $timeout (default: null)
+     * @return Dplr
+     */
+    public function command($command = null, $serverGroup = null, $timeout = null)
+    {
+        return $this->addTask(new CommandTask($command, $serverGroup, $timeout));
+    }
+
+    /**
+     * Alias for adding UploadTask
+     *
+     * @access public
+     * @param mixed $localFile (default: null)
+     * @param mixed $remoteFile (default: null)
+     * @param mixed $serverGroup (default: null)
+     * @param mixed $timeout (default: null)
+     * @return Dplr
+     */
+    public function upload($localFile = null, $remoteFile = null, $serverGroup = null, $timeout = null)
+    {
+        return $this->addTask(new UploadTask($localFile, $remoteFile, $serverGroup, $timeout));
+    }
+
+    /**
+     * Alias for adding DownloadTask
+     *
+     * @access public
+     * @param mixed $remoteFile (default: null)
+     * @param mixed $localFile (default: null)
+     * @param mixed $serverGroup (default: null)
+     * @param mixed $timeout (default: null)
+     * @return Dplr
+     */
+    public function download($remoteFile = null, $localFile = null, $serverGroup = null, $timeout = null)
+    {
+        return $this->addTask(new DownloadTask($remoteFile, $localFile, $serverGroup, $timeout));
+    }
+
+    /**
      * Add task report
      *
      * @access public
@@ -221,15 +274,36 @@ class Dplr
      * @param mixed $callback (default: null)
      * @return void
      */
-    public function run()
+    public function run($callback = null)
     {
+        if ($callback && !is_callable($callback)) {
+            throw new \InvalidArgumentException(sprintf('run() expects parameter 1 to be callable, %s given.', gettype($callback)));
+        }
+
+        if ($callback) {
+            call_user_func($callback, self::STATE_REGISTER_SERVERS);
+        }
         $this->registerServers();
+
+        if ($callback) {
+            call_user_func($callback, self::STATE_CONNECT_TO_SERVERS);
+        }
         $this->connectToServers();
 
         //unroll server groups in server lists and add tasks
+        if ($callback) {
+            call_user_func($callback, self::STATE_PREPARE_TASKS);
+        }
         $this->prepareTasks();
+
+        if ($callback) {
+            call_user_func($callback, self::STATE_RUN_TASKS);
+        }
         $this->runTasks();
 
+        if ($callback) {
+            call_user_func($callback, self::STATE_BUILD_REPORT);
+        }
         $this->collectTaskReports();
     }
 
