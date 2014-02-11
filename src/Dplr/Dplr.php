@@ -148,6 +148,17 @@ class Dplr
     }
 
     /**
+     * Return task executing reports
+     *
+     * @access public
+     * @return void
+     */
+    public function getTaskReports()
+    {
+        return $this->taskReports;
+    }
+
+    /**
      * Register servers in pssh
      *
      * @access protected
