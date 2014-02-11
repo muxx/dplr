@@ -8,7 +8,7 @@ Installation
 Use composer to install **dplr**:
 ```
 "require": {
-    "muxx/dplr": "*"
+    "muxx/dplr": "dev-master"
 }
 ```
 **Important**: `dplr` requires php extension [pssh](https://github.com/badoo/pssh_extension) and library [libpssh](https://github.com/badoo/libpssh). [This article](https://github.com/muxx/dplr/wiki/Install-ssh2,-libpssh-and-pssh-extension) describes their installation. 
