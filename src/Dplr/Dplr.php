@@ -299,7 +299,7 @@ class Dplr
         if ($callback) {
             call_user_func($callback, self::STATE_RUN_TASKS);
         }
-        $this->runTasks();
+        $this->runTasks($callback);
 
         if ($callback) {
             call_user_func($callback, self::STATE_BUILD_REPORT);
@@ -371,11 +371,17 @@ class Dplr
         return $result;
     }
 
-    protected function runTasks()
+    protected function runTasks($callback = null)
     {
         $this->timers['execution'] = new \DateTime();
+
+        $i = 0;
         do {
             $return = pssh_tasklist_exec($this->psshTaskHandler, $server);
+            if ($callback) {
+                call_user_func($callback, (string)$this->taskReports[$i]);
+            }
+            $i++;
         }
         while ($return == PSSH_RUNNING);
         $this->timers['execution'] = $this->timers['execution']->diff(new \DateTime());
