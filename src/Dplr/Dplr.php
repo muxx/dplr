@@ -376,14 +376,12 @@ class Dplr
         $this->timers['execution'] = new \DateTime();
 
         $i = 0;
-        do {
-            $return = pssh_tasklist_exec($this->psshTaskHandler, $server);
+        while (pssh_tasklist_exec($this->psshTaskHandler, $server) == PSSH_RUNNING) {
             if ($callback) {
                 call_user_func($callback, (string)$this->taskReports[$i]);
             }
             $i++;
         }
-        while ($return == PSSH_RUNNING);
         $this->timers['execution'] = $this->timers['execution']->diff(new \DateTime());
 
     }
