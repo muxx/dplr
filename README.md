@@ -41,10 +41,8 @@ if ($dplr->isSuccessful()) {
     //all goods
 }
 else {
-    //some errors
-
     foreach($dplr->getFailed() as $task) {
-        //echo "$task\n" . $task->getErrorOutput() . "\n\n";
+        //echo "[$task]\n" . $task->getErrorOutput() . "\n\n";
     }
 }
 
@@ -64,3 +62,12 @@ Array
 )
 */
 ```
+Installation
+------
+Use composer to install **dplr**:
+```
+"require": {
+    "muxx/dplr": "*"
+}
+```
+**IMPORTANT**: **Dplr** requires php extension [pssh](https://github.com/badoo/pssh_extension) and library [libpssh](https://github.com/badoo/libpssh). [This article](https://github.com/muxx/dplr/wiki/Install-ssh2,-libpssh-and-pssh-extension) describes their installation. 
