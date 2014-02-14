@@ -247,7 +247,7 @@ class Dplr
 
         $this->timers['connection'] = new \DateTime();
         do {
-            $ret = pssh_connect($this->pssh, $server, $this->connectionTimeout);
+            $ret = pssh_connect($this->pssh, $server, $this->connTimeout);
         	switch ($ret) {
         		case PSSH_CONNECTED:
         			unset($servers[$server]);
