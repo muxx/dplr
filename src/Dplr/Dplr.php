@@ -52,16 +52,23 @@ class Dplr
         $tasks = array(),
         $taskReports = array(),
 
-        $connectionTimeout,
+        $connTimeout,
 
         $timers = array();
 
-    public function __construct($user, $publicKey, $privateKey = null, $password = null, $connectionTimeout = 3)
+    public function __construct(
+        $user,
+        $publicKey,
+        $privateKey = null,
+        $password = null,
+        $connTimeout = 3,
+        $connOptions = null
+    )
     {
-        $this->pssh = pssh_init($user, $publicKey, $privateKey, $password);
+        $this->pssh = pssh_init($user, $publicKey, $privateKey, $password, $connOptions);
 
-        if ($connectionTimeout) {
-            $this->connectionTimeout = $connectionTimeout;
+        if ($connTimeout) {
+            $this->connTimeout = $connTimeout;
         }
     }
 
