@@ -29,13 +29,8 @@ $dplr
 const PATH = '/home/webmaster/product';
 
 $dplr
-    //upload `local_file1` on servers from group `front`
     ->upload('/path/to/local_file1', '/path/to/remote_file1', 'front')
-    //execute command on all servers
     ->command(PATH . '/app/console cache:clear')
-    //error command
-    ->command('nonexistent_command', 'master')
-    //download `remote_file2` from servers assigned group `master`
     ->download('/path/to/remote_file2', '/path/to/local_file2', 'master')
     ;
 
@@ -114,18 +109,12 @@ $path = '/home/webmaster/project';
 
 $dplr
     ->upload("$local/share/parameters.yml", "$path/app/config/parameters.yml")
-    ->command("cd $path && ./app/console cache:clear --env=prod --no-debug")
-    ->download("$path/web/index.php", "$local/share/index.php")
+    ->command("cd $path && ./app/console cache:clear --env=prod --no-debug", 'app', 15)
+    ->download("$path/web/index.php", "$local/share/index.php", null, 10)
     ;
 ```
 
-You can define timeout of task execution:
-```php
-$dplr
-    ->upload("$local/share/parameters.yml", "$path/app/config/parameters.yml", 3)
-    ->command("cd $path && ./app/console doctrine:migration:migrate --env=prod --no-debug", 15)
-    ;
-```
+In example above second task executes only on servers from group `app`. For second and third tasks defined execution timout (15 and 10 seconds).
 
 <a name="running"></a>
 ### Running
