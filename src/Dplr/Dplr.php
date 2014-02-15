@@ -231,7 +231,13 @@ class Dplr
         }
 
         foreach($this->servers as $serverName => $groups) {
-            pssh_server_add($this->pssh, $serverName);
+            if (strpos($serverName, ':') !== false) {
+                list($serverName, $port) = explode(':', $serverName);
+                pssh_server_add($this->pssh, $serverName, $port);
+            }
+            else {
+                pssh_server_add($this->pssh, $serverName);
+            }
         }
     }
 
