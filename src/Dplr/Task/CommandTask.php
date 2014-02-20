@@ -5,7 +5,7 @@ namespace Dplr\Task;
 use Dplr\TaskReport\CommandTaskReport;
 
 /**
- * Task which execute command on remote server
+ * Task which execute command(s) on remote server(s)
  *
  * @author Ilyas Salikhov <me@salikhovilyas.ru>
  */
@@ -13,12 +13,18 @@ class CommandTask extends AbstractTask
 {
     protected $command;
 
-    public function __construct($command = null, $serverGroup = null, $timeout = null)
+    public function __construct($command, $serverGroup = null, $timeout = null)
     {
-        if ($command) {
-            $this->setCommand($command);
-        }
+        $this->setCommand($command);
+
         parent::__construct($serverGroup, $timeout);
+    }
+
+    public function __toString()
+    {
+        $command = $this->getCommand();
+
+        return 'CMD ' . (is_array($command) ? implode(' | ', $command) : $command);
     }
 
     /**
@@ -49,16 +55,26 @@ class CommandTask extends AbstractTask
     /**
      * Add task to pssh task list for server
      *
-     * @access public
-     * @abstract
+     * @access protected
      * @return integer
      */
-    protected function _addToPsshTaskList(&$psshTaskList, $server)
+    protected function initTaskList()
     {
-        if (pssh_tasklist_add($psshTaskList, $server, $this->getCommand(), $this->getTimeout())) {
-            return new CommandTaskReport($this->getCommand(), $server);
+        $commands = $this->getCommand();
+        if (!is_array($commands)) {
+            $commands = array($commands);
         }
 
-        return false;
+        foreach($commands as $command) {
+            foreach($this->getServers() as $server) {
+                if (!pssh_tasklist_add($this->psshTaskHandler, $server, $command, $this->getTimeout())) {
+                    throw new \RuntimeException(sprintf('Failed to add command task "%s" for server %s', $command, $server));
+                }
+
+                $this->taskReports[] = new CommandTaskReport($command, $server);
+            }
+        }
+
+        return true;
     }
 }

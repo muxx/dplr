@@ -26,6 +26,18 @@ class UploadTask extends AbstractTask
         parent::__construct($serverGroup, $timeout);
     }
 
+    public function __toString()
+    {
+        $str =
+            'CPY '
+            . ($this->getLocalFile() ? $this->getLocalFile() : '')
+            . ' -> '
+            . ($this->getRemoteFile() ? $this->getRemoteFile() : '')
+            ;
+
+        return $str;
+    }
+
     /**
      * Return local file for uploading
      *
@@ -83,24 +95,28 @@ class UploadTask extends AbstractTask
      * @abstract
      * @return integer
      */
-    protected function _addToPsshTaskList(&$psshTaskList, $server)
+    protected function initTaskList()
     {
-        $result = pssh_copy_to_server(
-            $psshTaskList,
-            $server,
-            $this->getLocalFile(),
-            $this->getRemoteFile(),
-            $this->getTimeout()
-        );
+        foreach($this->getServers() as $server) {
+            $result = pssh_copy_to_server(
+                $this->psshTaskHandler,
+                $server,
+                $this->getLocalFile(),
+                $this->getRemoteFile(),
+                $this->getTimeout()
+            );
 
-        if ($result) {
-            return new UploadTaskReport(
+            if (!$result) {
+                throw new \RuntimeException(sprintf('Failed to add upload task for server %s', $server));
+            }
+
+            $this->taskReports[] = new UploadTaskReport(
                 $this->getLocalFile(),
                 $this->getRemoteFile(),
                 $server
             );
         }
 
-        return false;
+        return true;
     }
 }

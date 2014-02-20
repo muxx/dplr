@@ -7,7 +7,6 @@ use Dplr\Task\AbstractTask;
 use Dplr\Task\CommandTask;
 use Dplr\Task\DownloadTask;
 use Dplr\Task\UploadTask;
-use Dplr\TaskReport\AbstractTaskReport;
 
 /**
  * Object oriented deployer based on pssh_extension + libpssh
@@ -38,15 +37,15 @@ class Dplr
     *
     */
 
-    const STATE_REGISTER_SERVERS = 'Register servers';
-    const STATE_CONNECT_TO_SERVERS = 'Connect to servers';
-    const STATE_PREPARE_TASKS = 'Prepare tasks';
-    const STATE_RUN_TASKS = 'Run tasks';
-    const STATE_BUILD_REPORT = 'Build report';
+    const STATE_REGISTER_SERVERS = "Register servers...\n";
+    const STATE_CONNECT_TO_SERVERS = "Connect to servers...\n";
+    const STATE_PREPARE_TASKS = "Prepare tasks...\n";
+    const STATE_RUN_TASKS = "Run tasks...\n";
+    const STATE_BUILD_REPORT = "Build report...\n";
 
     protected
         $pssh,
-        $psshTaskHandler,
+        $tasksArePrepared = false,
 
         $servers = array(),
         $tasks = array(),
@@ -194,31 +193,6 @@ class Dplr
     }
 
     /**
-     * Add task report
-     *
-     * @access public
-     * @param AbstractTaskReport $task
-     * @return Dplr
-     */
-    public function addTaskReport(AbstractTaskReport $taskReport)
-    {
-        $this->taskReports[] = $taskReport;
-
-        return $this;
-    }
-
-    /**
-     * Return task executing reports
-     *
-     * @access public
-     * @return void
-     */
-    public function getTaskReports()
-    {
-        return $this->taskReports;
-    }
-
-    /**
      * Register servers in pssh
      *
      * @access protected
@@ -267,17 +241,23 @@ class Dplr
         }
     }
 
+    /**
+     * Init pssh tasks lists
+     *
+     * @access protected
+     * @return void
+     */
     protected function prepareTasks()
     {
-        if ($this->psshTaskHandler) {
-            throw new \LogicException('Tasks already defined.');
+        if ($this->tasksArePrepared) {
+            throw new \LogicException('Tasks already prepared.');
         }
-
-        $this->psshTaskHandler = pssh_tasklist_init($this->pssh);
 
         foreach($this->tasks as $task) {
-            $task->addToPsshTaskList($this->psshTaskHandler);
+            $task->init($this->pssh);
         }
+
+        $this->tasksArePrepared = true;
     }
 
     /**
@@ -367,6 +347,17 @@ class Dplr
     }
 
     /**
+     * Return task executing reports
+     *
+     * @access public
+     * @return void
+     */
+    public function getTaskReports()
+    {
+        return $this->taskReports;
+    }
+
+    /**
      * Return failed task reports
      *
      * @access public
@@ -388,39 +379,21 @@ class Dplr
     {
         $this->timers['execution'] = new \DateTime();
 
-        $i = 0;
-        while (pssh_tasklist_exec($this->psshTaskHandler, $server) == PSSH_RUNNING) {
-            if ($callback) {
-                call_user_func($callback, (string)$this->taskReports[$i]);
-            }
-            $i++;
+        foreach($this->tasks as $task) {
+            $task->run($callback);
         }
-        $this->timers['execution'] = $this->timers['execution']->diff(new \DateTime());
 
+        $this->timers['execution'] = $this->timers['execution']->diff(new \DateTime());
     }
 
     protected function collectTaskReports()
     {
-        for ($i = 0, $t = pssh_tasklist_first($this->psshTaskHandler); $t; $i++, $t = pssh_tasklist_next($this->psshTaskHandler)) {
-            $report = $this->taskReports[$i];
-
-            if ($report->getPsshTaskType() != pssh_task_type($t)) {
-                throw new \UnexpectedValueException(
-                    sprintf(
-                        'collectTaskReports() expects type %s for task "%s", %s given.',
-                        $report->getPsshTaskType(),
-                        (string)$report,
-                        pssh_task_type($t)
-                    )
-                );
-            }
-
-            $report
-                ->setStatus(pssh_task_status($t))
-                ->setExitStatus(pssh_task_exit_status($t))
-                ->setOutput(pssh_task_stdout($t))
-                ->setErrorOutput(pssh_task_stderr($t))
-                ;
+        foreach($this->tasks as $task) {
+            $task->collectResults();
+            $this->taskReports = array_merge(
+                $this->taskReports,
+                $task->getTaskReports()
+            );
         }
     }
 

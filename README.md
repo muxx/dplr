@@ -47,7 +47,7 @@ else {
     echo "Deploy completed successfully.\n";
 }
 
-$report = $this->dplr->getReport();
+$report = $dplr->getReport();
 echo sprintf(
     "Tasks: %s total, %s successful, %s failed.\nTime of connection: %s\nTime of execution: %s\n",
     $report['total'],
@@ -55,7 +55,7 @@ echo sprintf(
     $report['failed'],
     $report['timers']['connection'],
     $report['timers']['execution']
-));
+);
 ```
 <a name="installation"></a>
 ## Installation
@@ -66,7 +66,7 @@ Use composer to install **dplr**:
     "muxx/dplr": "dev-master"
 }
 ```
-**Important**: `dplr` requires php extension [pssh](https://github.com/badoo/pssh_extension) and library [libpssh](https://github.com/badoo/libpssh). [This article](https://github.com/muxx/dplr/wiki/Install-ssh2,-libpssh-and-pssh-extension) describes their installation. 
+**Important**: `dplr` requires php extension [pssh](https://github.com/badoo/pssh_extension) and library [libpssh](https://github.com/badoo/libpssh). [This article](https://github.com/muxx/dplr/wiki/Install-ssh2,-libpssh-and-pssh-extension) describes their installation.
 
 <a name="documentation"></a>
 ## Documentation

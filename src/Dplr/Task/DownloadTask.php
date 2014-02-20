@@ -26,6 +26,18 @@ class DownloadTask extends AbstractTask
         parent::__construct($serverGroup, $timeout);
     }
 
+    public function __toString()
+    {
+        $str =
+            'CPR '
+            . ($this->getRemoteFile() ? $this->getRemoteFile() : '')
+            . ' -> '
+            . ($this->getLocalFile() ? $this->getLocalFile() : '')
+            ;
+
+        return $str;
+    }
+
     /**
      * Return local file for uploading
      *
@@ -83,24 +95,28 @@ class DownloadTask extends AbstractTask
      * @abstract
      * @return integer
      */
-    protected function _addToPsshTaskList(&$psshTaskList, $server)
+    protected function initTaskList()
     {
-        $result = pssh_copy_from_server(
-            $psshTaskList,
-            $server,
-            $this->getRemoteFile(),
-            $this->getLocalFile(),
-            $this->getTimeout()
-        );
+        foreach($this->getServers() as $server) {
+            $result = pssh_copy_from_server(
+                $this->psshTaskHandler,
+                $server,
+                $this->getRemoteFile(),
+                $this->getLocalFile(),
+                $this->getTimeout()
+            );
 
-        if ($result) {
-            return new DownloadTaskReport(
+            if (!$result) {
+                throw new \RuntimeException(sprintf('Failed to add download task for server %s', $server));
+            }
+
+            $this->taskReports[] = new DownloadTaskReport(
                 $this->getRemoteFile(),
                 $this->getLocalFile(),
                 $server
             );
         }
 
-        return false;
+        return true;
     }
 }
