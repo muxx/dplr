@@ -35,10 +35,11 @@ $dplr
     ;
 
 $dplr->run(function($step) {
-    echo "$step...\n";
+    echo $step;
 });
 
 if (!$dplr->isSuccessful()) {
+    echo "Deploy completed with errors.\n";
     foreach($dplr->getFailed() as $task) {
         echo $task->getErrorOutput() . "\n";
     }
@@ -87,7 +88,7 @@ $dplr = new Dplr\Dplr('ssh-user', '/path/to/public.key', NULL, 'ssh-pas$word');
 <a name="register-servers"></a>
 ### Register servers
 
-Add multiply servers with adding in different group. Adding to groups allows you to execute tasks on certain server group.
+Add multiply servers with adding in different group. Adding to groups allows you to execute tasks on servers of certain group.
 ```php
 $dplr->addServer('1.2.3.4'); // Add server IP 1.2.3.4 without adding to group
 $dplr->addServer('1.2.3.5', 'app'); // Add server IP 1.2.3.5 with adding to group 'app'
@@ -114,7 +115,7 @@ $dplr
     ;
 ```
 
-In example above second task executes only on servers from group `app`. For second and third tasks defined execution timout (15 and 10 seconds).
+In example above file `parameters.yml` will be upload on all servers simultaneously and in parallel. Second task executes only on servers from group `app` (`1.2.3.5` and `1.2.3.6`) simultaneously. For second and third tasks defined execution timeouts (15 and 10 seconds correspondently).
 
 <a name="running"></a>
 ### Running
