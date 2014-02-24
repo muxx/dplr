@@ -128,7 +128,7 @@ $dplr->run();
 Define callback if you want to show steps of execution:
 ```php
 $dplr->run(function($step) {
-    echo "$step...\n";
+    echo $step;
 });
 
 /*
@@ -138,11 +138,13 @@ $dplr->run(function($step) {
     Connect to servers...
     Prepare tasks...
     Run tasks...
-    CPY /home/webmaster/test/share/parameters.yml -> /home/webmaster/project/app/config/parameters.yml (54.194.27.92)...
-    CMD cd /home/webmaster/project && ./app/console doctrine:migration:migrate --env=prod --no-debug (54.194.27.92)...
+    CPY /home/webmaster/test/share/parameters.yml -> /home/webmaster/project/app/config/parameters.yml....
+    CMD cd /home/webmaster/project && ./app/console doctrine:migration:migrate --env=prod --no-debug..
     Build report...
 */
 ```
+
+Each dot at the end of task lines means executing of the one action (upload, command, download) on the one server.
 
 <a name="result-processing"></a>
 ### Result processing
