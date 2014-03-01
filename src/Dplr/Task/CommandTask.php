@@ -42,7 +42,7 @@ class CommandTask extends AbstractTask
      * Set command for task
      *
      * @access public
-     * @param mixed $command
+     * @param  mixed       $command
      * @return CommandTask
      */
     public function setCommand($command)
@@ -65,8 +65,8 @@ class CommandTask extends AbstractTask
             $commands = array($commands);
         }
 
-        foreach($commands as $command) {
-            foreach($this->getServers() as $server) {
+        foreach ($commands as $command) {
+            foreach ($this->getServers() as $server) {
                 if (!pssh_tasklist_add($this->psshTaskHandler, $server, $command, $this->getTimeout())) {
                     throw new \RuntimeException(sprintf('Failed to add command task "%s" for server %s', $command, $server));
                 }

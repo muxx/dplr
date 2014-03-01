@@ -43,17 +43,15 @@ class Dplr
     const STATE_RUN_TASKS = "Run tasks...\n";
     const STATE_BUILD_REPORT = "Build report...\n";
 
-    protected
-        $pssh,
-        $tasksArePrepared = false,
+    protected $pssh;
+    protected $tasksArePrepared = false;
 
-        $servers = array(),
-        $tasks = array(),
-        $taskReports = array(),
+    protected $servers     = array();
+    protected $tasks       = array();
+    protected $taskReports = array();
+    protected $timers      = array();
 
-        $connTimeout,
-
-        $timers = array();
+    protected $connTimeout;
 
     public function __construct(
         $user,
@@ -75,8 +73,8 @@ class Dplr
      * Add server for deploying
      *
      * @access public
-     * @param mixed $serverName
-     * @param mixed $groups (default: null)
+     * @param  mixed $serverName
+     * @param  mixed $groups     (default: null)
      * @return Dplr
      */
     public function addServer($serverName, $groups = null)
@@ -105,13 +103,13 @@ class Dplr
      * Return servers list of group
      *
      * @access public
-     * @param mixed $group
+     * @param  mixed $group
      * @return array
      */
     public function getServersByGroup($group)
     {
         $servers = array();
-        foreach($this->servers as $serverName => $groups) {
+        foreach ($this->servers as $serverName => $groups) {
             if (in_array($group, $groups)) {
                 $servers[] = $serverName;
             }
@@ -124,14 +122,14 @@ class Dplr
      * Add task for executing on server
      *
      * @access public
-     * @param AbstractTask $task
+     * @param  AbstractTask $task
      * @return Dplr
      */
     public function addTask(AbstractTask $task)
     {
         if ($group = $task->getServerGroup()) {
             $contain = false;
-            foreach($this->servers as $serverName => $groups) {
+            foreach ($this->servers as $serverName => $groups) {
                 if (in_array($group, $groups)) {
                     $contain = true;
                 }
@@ -152,9 +150,9 @@ class Dplr
      * Alias for adding CommandTask
      *
      * @access public
-     * @param mixed $command (default: null)
-     * @param mixed $serverGroup (default: null)
-     * @param mixed $timeout (default: null)
+     * @param  mixed $command     (default: null)
+     * @param  mixed $serverGroup (default: null)
+     * @param  mixed $timeout     (default: null)
      * @return Dplr
      */
     public function command($command = null, $serverGroup = null, $timeout = null)
@@ -166,10 +164,10 @@ class Dplr
      * Alias for adding UploadTask
      *
      * @access public
-     * @param mixed $localFile (default: null)
-     * @param mixed $remoteFile (default: null)
-     * @param mixed $serverGroup (default: null)
-     * @param mixed $timeout (default: null)
+     * @param  mixed $localFile   (default: null)
+     * @param  mixed $remoteFile  (default: null)
+     * @param  mixed $serverGroup (default: null)
+     * @param  mixed $timeout     (default: null)
      * @return Dplr
      */
     public function upload($localFile = null, $remoteFile = null, $serverGroup = null, $timeout = null)
@@ -181,10 +179,10 @@ class Dplr
      * Alias for adding DownloadTask
      *
      * @access public
-     * @param mixed $remoteFile (default: null)
-     * @param mixed $localFile (default: null)
-     * @param mixed $serverGroup (default: null)
-     * @param mixed $timeout (default: null)
+     * @param  mixed $remoteFile  (default: null)
+     * @param  mixed $localFile   (default: null)
+     * @param  mixed $serverGroup (default: null)
+     * @param  mixed $timeout     (default: null)
      * @return Dplr
      */
     public function download($remoteFile = null, $localFile = null, $serverGroup = null, $timeout = null)
@@ -204,12 +202,11 @@ class Dplr
             throw new \UnexpectedValueException('Not defined servers list.');
         }
 
-        foreach($this->servers as $serverName => $groups) {
+        foreach ($this->servers as $serverName => $groups) {
             if (strpos($serverName, ':') !== false) {
                 list($serverName, $port) = explode(':', $serverName);
                 pssh_server_add($this->pssh, $serverName, $port);
-            }
-            else {
+            } else {
                 pssh_server_add($this->pssh, $serverName);
             }
         }
@@ -228,11 +225,11 @@ class Dplr
         $this->timers['connection'] = new \DateTime();
         do {
             $ret = pssh_connect($this->pssh, $server, $this->connTimeout);
-        	switch ($ret) {
-        		case PSSH_CONNECTED:
-        			unset($servers[$server]);
-        			break;
-        	}
+            switch ($ret) {
+                case PSSH_CONNECTED:
+                    unset($servers[$server]);
+                    break;
+            }
         } while ($ret == PSSH_CONNECTED);
         $this->timers['connection'] = $this->timers['connection']->diff(new \DateTime());
 
@@ -253,7 +250,7 @@ class Dplr
             throw new \LogicException('Tasks already prepared.');
         }
 
-        foreach($this->tasks as $task) {
+        foreach ($this->tasks as $task) {
             $task->init($this->pssh);
         }
 
@@ -264,7 +261,7 @@ class Dplr
      * Run tasks on servers
      *
      * @access public
-     * @param mixed $callback (default: null)
+     * @param  mixed $callback (default: null)
      * @return void
      */
     public function run($callback = null)
@@ -309,7 +306,7 @@ class Dplr
     public function isSuccessful()
     {
         $result = true;
-        foreach($this->taskReports as $report) {
+        foreach ($this->taskReports as $report) {
             $result &= $report->isSuccessful();
         }
 
@@ -334,11 +331,10 @@ class Dplr
             ),
         );
 
-        foreach($this->taskReports as $report) {
+        foreach ($this->taskReports as $report) {
             if ($report->isSuccessful()) {
                 $result['successful']++;
-            }
-            else {
+            } else {
                 $result['failed']++;
             }
         }
@@ -366,7 +362,7 @@ class Dplr
     public function getFailed()
     {
         $result = array();
-        foreach($this->taskReports as $report) {
+        foreach ($this->taskReports as $report) {
             if (!$report->isSuccessful()) {
                 $result[] = $report;
             }
@@ -379,7 +375,7 @@ class Dplr
     {
         $this->timers['execution'] = new \DateTime();
 
-        foreach($this->tasks as $task) {
+        foreach ($this->tasks as $task) {
             $task->run($callback);
         }
 
@@ -388,7 +384,7 @@ class Dplr
 
     protected function collectTaskReports()
     {
-        foreach($this->tasks as $task) {
+        foreach ($this->tasks as $task) {
             $task->collectResults();
             $this->taskReports = array_merge(
                 $this->taskReports,

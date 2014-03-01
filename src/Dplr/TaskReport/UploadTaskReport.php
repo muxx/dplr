@@ -42,7 +42,7 @@ class UploadTaskReport extends AbstractTaskReport
      * Set local file for uploading
      *
      * @access public
-     * @param mixed $localFile
+     * @param  mixed            $localFile
      * @return UploadTaskReport
      */
     public function setLocalFile($localFile)
@@ -67,7 +67,7 @@ class UploadTaskReport extends AbstractTaskReport
      * Set remote file for uploading
      *
      * @access public
-     * @param mixed $remoteFile
+     * @param  mixed            $remoteFile
      * @return UploadTaskReport
      */
     public function setRemoteFile($remoteFile)

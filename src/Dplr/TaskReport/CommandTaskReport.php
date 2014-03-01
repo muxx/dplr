@@ -51,7 +51,7 @@ class CommandTaskReport extends AbstractTaskReport
      * Set task command
      *
      * @access public
-     * @param mixed $command
+     * @param  mixed              $command
      * @return AbstractTaskReport
      */
     public function setCommand($command)

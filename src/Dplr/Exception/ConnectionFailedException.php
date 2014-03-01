@@ -18,7 +18,7 @@ class ConnectionFailedException extends \RuntimeException
         parent::__construct(
             sprintf(
                 'Failed to connect to servers: %s.',
-                '"' . implode('", "', $servers)
+                '"' . implode('", "', $servers) . '"'
             )
         );
 

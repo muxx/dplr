@@ -11,8 +11,7 @@ use Dplr\TaskReport\UploadTaskReport;
  */
 class UploadTask extends AbstractTask
 {
-    protected
-        $localFile,
+    protected $localFile,
         $remoteFile;
 
     public function __construct($localFile = null, $remoteFile = null, $serverGroup = null, $timeout = null)
@@ -53,7 +52,7 @@ class UploadTask extends AbstractTask
      * Set local file for uploading
      *
      * @access public
-     * @param mixed $localFile
+     * @param  mixed      $localFile
      * @return UploadTask
      */
     public function setLocalFile($localFile)
@@ -78,7 +77,7 @@ class UploadTask extends AbstractTask
      * Set remote file for uploading
      *
      * @access public
-     * @param mixed $remoteFile
+     * @param  mixed      $remoteFile
      * @return UploadTask
      */
     public function setRemoteFile($remoteFile)
@@ -97,7 +96,7 @@ class UploadTask extends AbstractTask
      */
     protected function initTaskList()
     {
-        foreach($this->getServers() as $server) {
+        foreach ($this->getServers() as $server) {
             $result = pssh_copy_to_server(
                 $this->psshTaskHandler,
                 $server,

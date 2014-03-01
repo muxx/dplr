@@ -56,7 +56,7 @@ abstract class AbstractTaskReport
      * Set server where task executed
      *
      * @access public
-     * @param mixed $server
+     * @param  mixed              $server
      * @return AbstractTaskReport
      */
     public function setServer($server)
@@ -81,7 +81,7 @@ abstract class AbstractTaskReport
      * Set status for task
      *
      * @access public
-     * @param mixed $status
+     * @param  mixed              $status
      * @return AbstractTaskReport
      */
     public function setStatus($status)
@@ -106,7 +106,7 @@ abstract class AbstractTaskReport
      * Set exit status for task
      *
      * @access public
-     * @param mixed $exitStatus
+     * @param  mixed              $exitStatus
      * @return AbstractTaskReport
      */
     public function setExitStatus($exitStatus)
@@ -131,7 +131,7 @@ abstract class AbstractTaskReport
      * Set output of task
      *
      * @access public
-     * @param mixed $output
+     * @param  mixed              $output
      * @return AbstractTaskReport
      */
     public function setOutput($output)
@@ -156,7 +156,7 @@ abstract class AbstractTaskReport
      * Set error output of task
      *
      * @access public
-     * @param mixed $errorOutput
+     * @param  mixed              $errorOutput
      * @return AbstractTaskReport
      */
     public function setErrorOutput($errorOutput)

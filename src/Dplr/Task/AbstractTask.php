@@ -3,7 +3,6 @@
 namespace Dplr\Task;
 
 use Dplr\Dplr;
-use Dplr\TaskReport\AbstractTaskReport;
 
 /**
  * Task
@@ -12,8 +11,7 @@ use Dplr\TaskReport\AbstractTaskReport;
  */
 abstract class AbstractTask
 {
-    protected
-        $dplr,
+    protected $dplr,
         $serverGroup,
         $psshTaskHandler,
         $taskReports = array(),
@@ -31,7 +29,7 @@ abstract class AbstractTask
      * Set deployer
      *
      * @access public
-     * @param Dplr $dplr
+     * @param  Dplr         $dplr
      * @return AbstractTask
      */
     public function setDplr(Dplr $dplr)
@@ -67,7 +65,7 @@ abstract class AbstractTask
      * Set server group for task
      *
      * @access public
-     * @param mixed $server
+     * @param  mixed $server
      * @return Task
      */
     public function setServerGroup($serverGroup)
@@ -91,8 +89,7 @@ abstract class AbstractTask
 
         if ($this->getServerGroup()) {
             $servers = $this->dplr->getServersByGroup($this->getServerGroup());
-        }
-        else {
+        } else {
             $servers = $this->dplr->getServers();
         }
 
@@ -114,7 +111,7 @@ abstract class AbstractTask
      * Set timeout of task execution
      *
      * @access public
-     * @param mixed $timeout = null
+     * @param  mixed $timeout = null
      * @return Task
      */
     public function setTimeout($timeout = null)
@@ -128,7 +125,7 @@ abstract class AbstractTask
      * Init pssh task list
      *
      * @access public
-     * @param mixed $pssh
+     * @param  mixed $pssh
      * @return void
      */
     public function init($pssh)
@@ -148,7 +145,7 @@ abstract class AbstractTask
      * Run task
      *
      * @access public
-     * @param mixed $callback
+     * @param  mixed $callback
      * @return void
      */
     public function run($callback)
@@ -178,7 +175,7 @@ abstract class AbstractTask
                     sprintf(
                         'collectTaskReports() expects type %s for task "%s", %s given.',
                         $report->getPsshTaskType(),
-                        (string)$report,
+                        (string) $report,
                         pssh_task_type($t)
                     )
                 );
