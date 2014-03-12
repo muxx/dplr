@@ -202,7 +202,18 @@ class Dplr
             throw new \UnexpectedValueException('Not defined servers list.');
         }
 
+        //define servers which involved in tasks
+        $servers = [];
+        foreach ($this->tasks as $task) {
+            $servers = array_merge($servers, $task->getServers());
+        }
+        array_unique($servers);
+
         foreach ($this->servers as $serverName => $groups) {
+            if (!in_array($serverName, $servers)) {
+                continue;
+            }
+
             if (strpos($serverName, ':') !== false) {
                 list($serverName, $port) = explode(':', $serverName);
                 pssh_server_add($this->pssh, $serverName, $port);
