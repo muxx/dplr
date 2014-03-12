@@ -24,7 +24,7 @@ class CommandTask extends AbstractTask
     {
         $command = $this->getCommand();
 
-        return 'CMD ' . (is_array($command) ? implode(' | ', $command) : $command);
+        return 'CMD ' . (is_array($command) ? implode("\n    ", $command) : $command);
     }
 
     /**
