@@ -1,6 +1,6 @@
 ## dplr
 
-Object oriented deployer based on [pssh_extension](https://github.com/badoo/pssh_extension) + [libpssh](https://github.com/badoo/libpssh). Simple, fast, really fast.
+Object oriented deployer based on [pssh_extension](https://github.com/badoo/pssh_extension) + [libpssh](https://github.com/badoo/libpssh) which allows to execute tasks simultaneously and in parallel. Simple, fast, really fast. 
 
 * [Installation](#installation)
 * [Documentation](#documentation)
