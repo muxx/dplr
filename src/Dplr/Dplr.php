@@ -337,8 +337,8 @@ class Dplr
             'successful' => 0,
             'failed' => 0,
             'timers' => array(
-                'connection' => $this->timers['connection']->format('%I:%S'),
-                'execution' => $this->timers['execution']->format('%I:%S'),
+                'connection' => $this->timers['connection']->format('%H:%I:%S'),
+                'execution' => $this->timers['execution']->format('%H:%I:%S'),
             ),
         );
 
