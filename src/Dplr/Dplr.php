@@ -5,8 +5,11 @@ namespace Dplr;
 use Dplr\Exception\ConnectionFailedException;
 use Dplr\Task\AbstractTask;
 use Dplr\Task\CommandTask;
+use Dplr\Task\CallbackTask;
 use Dplr\Task\DownloadTask;
 use Dplr\Task\UploadTask;
+
+const PSSH_TASK_TYPE_CALLBACK = 9;
 
 /**
  * Object oriented deployer based on pssh_extension + libpssh
@@ -34,6 +37,7 @@ class Dplr
     * task types
     *   PSSH_TASK_TYPE_COPY
     *   PSSH_TASK_TYPE_EXEC
+    *   PSSH_TASK_TYPE_CALLBACK
     *
     */
 
@@ -158,6 +162,21 @@ class Dplr
     public function command($command = null, $serverGroup = null, $timeout = null)
     {
         return $this->addTask(new CommandTask($command, $serverGroup, $timeout));
+    }
+
+    /**
+     * Alias for adding CallbackTask
+     *
+     * @access public
+     * @param  string   $name
+     * @param  callable $command
+     * @param  mixed    $serverGroup (default: null)
+     * @param  int      $timeout     (default: null)
+     * @return Dplr
+     */
+    public function callback($name, callable $callback, $serverGroup = null, $timeout = null)
+    {
+        return $this->addTask(new CallbackTask($name, $callback, $serverGroup, $timeout));
     }
 
     /**

@@ -9,13 +9,11 @@ namespace Dplr\TaskReport;
  */
 abstract class AbstractTaskReport
 {
-    protected
-        //task result information
-        $server,
-        $status,
-        $exitStatus,
-        $stdOut,
-        $stdErr;
+    protected $server;
+    protected $status;
+    protected $exitStatus = -1;
+    protected $stdOut;
+    protected $stdErr;
 
     public function __construct($server = null)
     {
