@@ -2,75 +2,29 @@
 
 namespace Dplr;
 
-use Dplr\Exception\ConnectionFailedException;
-use Dplr\Task\AbstractTask;
-use Dplr\Task\CommandTask;
-use Dplr\Task\CallbackTask;
-use Dplr\Task\DownloadTask;
-use Dplr\Task\UploadTask;
-
-const PSSH_TASK_TYPE_CALLBACK = 9;
-
 /**
- * Object oriented deployer based on pssh_extension + libpssh
+ * Object oriented deployer based on GoSSHa
  *
  * @author Ilyas Salikhov <me@salikhovilyas.ru>
  */
 class Dplr
 {
-   /*
-    * pssh constants
-    *
-    * connection status:
-    *   PSSH_CONNECTED
-    *   PSSH_RUNNING
-    *   PSSH_TIMEOUT
-    *   PSSH_FAILED
-    *   PSSH_SUCCESS
-    *
-    * task execution result
-    *   PSSH_TASK_NONE
-    *   PSSH_TASK_ERROR
-    *   PSSH_TASK_INPROGRESS
-    *   PSSH_TASK_DONE
-    *
-    * task types
-    *   PSSH_TASK_TYPE_COPY
-    *   PSSH_TASK_TYPE_EXEC
-    *   PSSH_TASK_TYPE_CALLBACK
-    *
-    */
+    const DEFAULT_TIMEOUT = 3600;
 
-    const STATE_REGISTER_SERVERS = "Register servers...\n";
-    const STATE_CONNECT_TO_SERVERS = "Connect to servers...\n";
-    const STATE_PREPARE_TASKS = "Prepare tasks...\n";
-    const STATE_RUN_TASKS = "Run tasks...\n";
-    const STATE_BUILD_REPORT = "Build report...\n";
+    protected $servers = [];
+    protected $tasks = [];
+    protected $reports = [];
+    protected $timers = [];
 
-    protected $pssh;
-    protected $tasksArePrepared = false;
+    protected $user;
+    protected $publicKey;
+    protected $gosshaPath;
 
-    protected $servers     = array();
-    protected $tasks       = array();
-    protected $taskReports = array();
-    protected $timers      = array();
-
-    protected $connTimeout;
-
-    public function __construct(
-        $user,
-        $publicKey,
-        $privateKey = null,
-        $password = null,
-        $connTimeout = 3,
-        $connOptions = null
-    )
+    public function __construct($user, $gosshaPath, $publicKey = null)
     {
-        $this->pssh = pssh_init($user, $publicKey, $privateKey, $password, $connOptions);
-
-        if ($connTimeout) {
-            $this->connTimeout = $connTimeout;
-        }
+        $this->user = $user;
+        $this->publicKey = $publicKey;
+        $this->gosshaPath = $gosshaPath;
     }
 
     /**
@@ -123,208 +77,70 @@ class Dplr
     }
 
     /**
-     * Add task for executing on server
+     * Adding command task
      *
-     * @access public
-     * @param  AbstractTask $task
+     * @param  string $command
+     * @param  string $serverGroup (default: null)
+     * @param  int    $timeout     (default: 3600)
      * @return Dplr
      */
-    public function addTask(AbstractTask $task)
+    public function command($command, $serverGroup = null, $timeout = self::DEFAULT_TIMEOUT)
     {
-        if ($group = $task->getServerGroup()) {
-            $contain = false;
-            foreach ($this->servers as $serverName => $groups) {
-                if (in_array($group, $groups)) {
-                    $contain = true;
-                }
-            }
+        $data = [
+            'Action' => 'ssh',
+            'Cmd' => $command,
+            'Hosts' => $serverGroup ? $this->getServersByGroup($serverGroup) : $this->getServers(),
+        ];
 
-            if (!$contain) {
-                throw new \RuntimeException(sprintf('Server group "%s" not defined in current session.', $group));
-            }
+        if ($timeout) {
+            $data['Timeout'] = (int) $timeout * 1000;
         }
 
-        $task->setDplr($this);
-        $this->tasks[] = $task;
+        $this->tasks[] = new Task($data);
 
         return $this;
     }
 
     /**
-     * Alias for adding CommandTask
+     * Adding uploading task
      *
      * @access public
-     * @param  mixed $command     (default: null)
-     * @param  mixed $serverGroup (default: null)
-     * @param  mixed $timeout     (default: null)
+     * @param  string $localFile
+     * @param  string $remoteFile
+     * @param  string $serverGroup (default: null)
+     * @param  int    $timeout     (default: 3600)
      * @return Dplr
      */
-    public function command($command = null, $serverGroup = null, $timeout = null)
+    public function upload($localFile, $remoteFile, $serverGroup = null, $timeout = self::DEFAULT_TIMEOUT)
     {
-        return $this->addTask(new CommandTask($command, $serverGroup, $timeout));
-    }
+        $data = [
+            'Action' => 'scp',
+            'Source' => $localFile,
+            'Target' => $remoteFile,
+            'Hosts' => $serverGroup ? $this->getServersByGroup($serverGroup) : $this->getServers(),
+        ];
 
-    /**
-     * Alias for adding CallbackTask
-     *
-     * @access public
-     * @param  string   $name
-     * @param  callable $command
-     * @param  mixed    $serverGroup (default: null)
-     * @param  int      $timeout     (default: null)
-     * @return Dplr
-     */
-    public function callback($name, callable $callback, $serverGroup = null, $timeout = null)
-    {
-        return $this->addTask(new CallbackTask($name, $callback, $serverGroup, $timeout));
-    }
-
-    /**
-     * Alias for adding UploadTask
-     *
-     * @access public
-     * @param  mixed $localFile   (default: null)
-     * @param  mixed $remoteFile  (default: null)
-     * @param  mixed $serverGroup (default: null)
-     * @param  mixed $timeout     (default: null)
-     * @return Dplr
-     */
-    public function upload($localFile = null, $remoteFile = null, $serverGroup = null, $timeout = null)
-    {
-        return $this->addTask(new UploadTask($localFile, $remoteFile, $serverGroup, $timeout));
-    }
-
-    /**
-     * Alias for adding DownloadTask
-     *
-     * @access public
-     * @param  mixed $remoteFile  (default: null)
-     * @param  mixed $localFile   (default: null)
-     * @param  mixed $serverGroup (default: null)
-     * @param  mixed $timeout     (default: null)
-     * @return Dplr
-     */
-    public function download($remoteFile = null, $localFile = null, $serverGroup = null, $timeout = null)
-    {
-        return $this->addTask(new DownloadTask($remoteFile, $localFile, $serverGroup, $timeout));
-    }
-
-    /**
-     * Register servers in pssh
-     *
-     * @access protected
-     * @return void
-     */
-    protected function registerServers()
-    {
-        if (!sizeof($this->servers)) {
-            throw new \UnexpectedValueException('Not defined servers list.');
+        if ($timeout) {
+            $data['Timeout'] = (int) $timeout * 1000;
         }
 
-        //define servers which involved in tasks
-        $servers = [];
-        foreach ($this->tasks as $task) {
-            $servers = array_merge($servers, $task->getServers());
-        }
-        array_unique($servers);
+        $this->tasks[] = new Task($data);
 
-        foreach ($this->servers as $serverName => $groups) {
-            if (!in_array($serverName, $servers)) {
-                continue;
-            }
-
-            if (strpos($serverName, ':') !== false) {
-                list($serverName, $port) = explode(':', $serverName);
-                pssh_server_add($this->pssh, $serverName, $port);
-            } else {
-                pssh_server_add($this->pssh, $serverName);
-            }
-        }
-    }
-
-    /**
-     * Do connecting to servers.
-     *
-     * @access protected
-     * @return void
-     */
-    protected function connectToServers()
-    {
-        $servers = $this->servers;
-
-        $this->timers['connection'] = new \DateTime();
-        do {
-            $ret = pssh_connect($this->pssh, $server, $this->connTimeout);
-            switch ($ret) {
-                case PSSH_CONNECTED:
-                    unset($servers[$server]);
-                    break;
-            }
-        } while ($ret == PSSH_CONNECTED);
-        $this->timers['connection'] = $this->timers['connection']->diff(new \DateTime());
-
-        if (PSSH_SUCCESS !== $ret) {
-            throw new ConnectionFailedException($servers);
-        }
-    }
-
-    /**
-     * Init pssh tasks lists
-     *
-     * @access protected
-     * @return void
-     */
-    protected function prepareTasks()
-    {
-        if ($this->tasksArePrepared) {
-            throw new \LogicException('Tasks already prepared.');
-        }
-
-        foreach ($this->tasks as $task) {
-            $task->init($this->pssh);
-        }
-
-        $this->tasksArePrepared = true;
+        return $this;
     }
 
     /**
      * Run tasks on servers
      *
      * @access public
-     * @param  mixed $callback (default: null)
-     * @return void
+     * @param  callable $callback (default: null)
+     * @return Dplr
      */
-    public function run($callback = null)
+    public function run(callable $callback = null)
     {
-        if ($callback && !is_callable($callback)) {
-            throw new \InvalidArgumentException(sprintf('run() expects parameter 1 to be callable, %s given.', gettype($callback)));
-        }
-
-        if ($callback) {
-            call_user_func($callback, self::STATE_REGISTER_SERVERS);
-        }
-        $this->registerServers();
-
-        if ($callback) {
-            call_user_func($callback, self::STATE_CONNECT_TO_SERVERS);
-        }
-        $this->connectToServers();
-
-        //unroll server groups in server lists and add tasks
-        if ($callback) {
-            call_user_func($callback, self::STATE_PREPARE_TASKS);
-        }
-        $this->prepareTasks();
-
-        if ($callback) {
-            call_user_func($callback, self::STATE_RUN_TASKS);
-        }
         $this->runTasks($callback);
 
-        if ($callback) {
-            call_user_func($callback, self::STATE_BUILD_REPORT);
-        }
-        $this->collectTaskReports();
+        return $this;
     }
 
     /**
@@ -335,12 +151,13 @@ class Dplr
      */
     public function isSuccessful()
     {
-        $result = true;
-        foreach ($this->taskReports as $report) {
-            $result &= $report->isSuccessful();
+        foreach ($this->reports as $report) {
+            if (!$report->isSuccessful()) {
+                return false;
+            }
         }
 
-        return $result;
+        return true;
     }
 
     /**
@@ -351,17 +168,16 @@ class Dplr
      */
     public function getReport()
     {
-        $result = array(
-            'total' => sizeof($this->taskReports),
+        $result = [
+            'total' => sizeof($this->reports),
             'successful' => 0,
             'failed' => 0,
-            'timers' => array(
-                'connection' => $this->timers['connection']->format('%H:%I:%S'),
+            'timers' => [
                 'execution' => $this->timers['execution']->format('%H:%I:%S'),
-            ),
-        );
+            ],
+        ];
 
-        foreach ($this->taskReports as $report) {
+        foreach ($this->reports as $report) {
             if ($report->isSuccessful()) {
                 $result['successful']++;
             } else {
@@ -373,17 +189,6 @@ class Dplr
     }
 
     /**
-     * Return task executing reports
-     *
-     * @access public
-     * @return void
-     */
-    public function getTaskReports()
-    {
-        return $this->taskReports;
-    }
-
-    /**
      * Return failed task reports
      *
      * @access public
@@ -391,42 +196,106 @@ class Dplr
      */
     public function getFailed()
     {
-        $result = array();
-        foreach ($this->taskReports as $report) {
-            if (!$report->isSuccessful()) {
-                $result[] = $report;
-            }
-        }
+        return array_filter($this->reports, function ($item) {
+            return !$item->isSuccessful();
+        });
+    }
 
-        return $result;
+    /**
+     * Return all reports
+     *
+     * @access public
+     * @return array
+     */
+    public function getReports()
+    {
+        return $this->reports;
     }
 
     protected function runTasks($callback = null)
     {
+        if ($this->publicKey) {
+            $pl = sprintf('%s -l %s -i %s', $this->gosshaPath, $this->user, $this->publicKey);
+        } else {
+            $pl = sprintf('%s -l %s', $this->gosshaPath, $this->user);
+        }
+
+        $descriptorspec = [
+            0 => ["pipe", "r"],
+            1 => ["pipe", "w"],
+            2 => ["pipe", "w"],
+        ];
+
+        // run GoSSHa
+        $process = proc_open($pl, $descriptorspec, $pipes);
+        if (!is_resource($process)) {
+            throw new \RuntimeException('Can not run GoSSHa.');
+        }
+
         $this->timers['execution'] = new \DateTime();
 
-        foreach ($this->tasks as $task) {
-            $task->run($callback);
+        // run tasks
+        if (sizeof($this->tasks)) {
+            foreach ($this->tasks as $task) {
+                // send command
+                if ($callback) {
+                    call_user_func($callback, (string) $task . ' ');
+                }
+                fwrite($pipes[0], $task->getJson() . "\n");
+
+                // read replies
+                while (($stdout = fgets($pipes[1])) !== false) {
+                    $data = json_decode($stdout, true);
+
+                    if ($data['Type'] === 'Reply') {
+                        $report = new TaskReport($data, $task);
+                        $this->reports[] = $report;
+
+                        if ($callback) {
+                            call_user_func($callback, $report->isSuccessful() ? '.' : 'E');
+                        }
+                    } elseif ($data['Type'] === 'UserError') {
+                        $this->reports[] = new TaskReport($data, $task);
+
+                        if ($callback) {
+                            call_user_func($callback, 'U');
+                        }
+                    } elseif ($data['Type'] === 'FinalReply') {
+                        $hosts = $data['TimedOutHosts'];
+                        if (count($hosts)) {
+                            foreach ($hosts as $host => $v) {
+                                $d = [
+                                    'Type' => TaskReport::TYPE_TIMEOUT,
+                                    'Success' => false,
+                                    'Hostname' => $host,
+                                    'ErrorMsg' => "Command execution reached timeout.\n",
+                                ];
+                                $this->reports[] = new TaskReport($d, $task);
+
+                                if ($callback) {
+                                    call_user_func($callback, 'T');
+                                }
+                            }
+                        }
+                    }
+
+                    // next task
+                    if (in_array($data['Type'], ['FinalReply', 'UserError'])) {
+                        if ($callback) {
+                            call_user_func($callback, "\n");
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         $this->timers['execution'] = $this->timers['execution']->diff(new \DateTime());
-    }
 
-    protected function collectTaskReports()
-    {
-        foreach ($this->tasks as $task) {
-            $task->collectResults();
-            $this->taskReports = array_merge(
-                $this->taskReports,
-                $task->getTaskReports()
-            );
+        foreach ($pipes as $pipe) {
+            fclose($pipe);
         }
-    }
 
-    public function __destruct()
-    {
-        if ($this->pssh) {
-            pssh_free($this->pssh);
-        }
+        proc_close($process);
     }
 }
