@@ -150,7 +150,7 @@ echo sprintf(
     $report['successful'],
     $report['failed'],
     $report['timers']['execution']
-));
+);
 
 /*
     Output
