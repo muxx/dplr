@@ -11,8 +11,12 @@ class Dplr
 {
     const DEFAULT_TIMEOUT = 3600;
 
+    const STATE_INIT = 'init';
+    const STATE_RUNNING = 'running';
+
     protected $servers = [];
     protected $tasks = [];
+    protected $tasksThread = 0;
     protected $reports = [];
     protected $timers = [];
 
@@ -20,11 +24,30 @@ class Dplr
     protected $publicKey;
     protected $gosshaPath;
 
+    // dplr state
+    protected $state;
+
     public function __construct($user, $gosshaPath, $publicKey = null)
     {
         $this->user = $user;
         $this->publicKey = $publicKey;
         $this->gosshaPath = $gosshaPath;
+
+        $this->resetTasks();
+        $this->state = self::STATE_INIT;
+    }
+
+    protected function resetTasks()
+    {
+        $this->tasks = [[]];
+        $this->tasksThread = 0;
+    }
+
+    protected function checkState()
+    {
+        if ($this->state == self::STATE_RUNNING) {
+            throw new \RuntimeException('Dplr is already running.');
+        }
     }
 
     /**
@@ -37,6 +60,8 @@ class Dplr
      */
     public function addServer($serverName, $groups = null)
     {
+        $this->checkState();
+
         if ($groups && !is_array($groups)) {
             $groups = array($groups);
         }
@@ -77,6 +102,24 @@ class Dplr
     }
 
     /**
+     * Creating new thread
+     *
+     * @return Dplr
+     */
+    public function newThread()
+    {
+        // if current thread is empty, use it
+        if (!count($this->tasks[$this->tasksThread])) {
+            return $this;
+        }
+
+        $this->tasksThread++;
+        $this->tasks[$this->tasksThread] = [];
+
+        return $this;
+    }
+
+    /**
      * Adding command task
      *
      * @param  string $command
@@ -86,6 +129,8 @@ class Dplr
      */
     public function command($command, $serverGroup = null, $timeout = self::DEFAULT_TIMEOUT)
     {
+        $this->checkState();
+
         $data = [
             'Action' => 'ssh',
             'Cmd' => $command,
@@ -96,7 +141,7 @@ class Dplr
             $data['Timeout'] = (int) $timeout * 1000;
         }
 
-        $this->tasks[] = new Task($data);
+        $this->tasks[$this->tasksThread][] = new Task($data);
 
         return $this;
     }
@@ -113,6 +158,8 @@ class Dplr
      */
     public function upload($localFile, $remoteFile, $serverGroup = null, $timeout = self::DEFAULT_TIMEOUT)
     {
+        $this->checkState();
+
         $data = [
             'Action' => 'scp',
             'Source' => $localFile,
@@ -124,7 +171,7 @@ class Dplr
             $data['Timeout'] = (int) $timeout * 1000;
         }
 
-        $this->tasks[] = new Task($data);
+        $this->tasks[$this->tasksThread][] = new Task($data);
 
         return $this;
     }
@@ -138,7 +185,11 @@ class Dplr
      */
     public function run(callable $callback = null)
     {
+        $this->state = self::STATE_RUNNING;
+
         $this->runTasks($callback);
+
+        $this->state = self::STATE_INIT;
 
         return $this;
     }
@@ -214,6 +265,21 @@ class Dplr
 
     protected function runTasks($callback = null)
     {
+        $max = 0;
+        // clear empty threads and search max thread
+        foreach ($this->tasks as $i => $thread) {
+            if (!count($thread)) {
+                unset($this->tasks[$i]);
+            } else {
+                if (count($thread) > $max) {
+                    $max = count($thread);
+                }
+            }
+        }
+
+        // reset reports
+        $this->reports = [];
+
         if ($this->publicKey) {
             $pl = sprintf('%s -l %s -i %s', $this->gosshaPath, $this->user, $this->publicKey);
         } else {
@@ -226,25 +292,44 @@ class Dplr
             2 => ["pipe", "w"],
         ];
 
+        $pipes = array_fill(0, count($this->tasks), []);
+        $processes = [];
+
         // run GoSSHa
-        $process = proc_open($pl, $descriptorspec, $pipes);
-        if (!is_resource($process)) {
-            throw new \RuntimeException('Can not run GoSSHa.');
+        foreach ($this->tasks as $i => $thread) {
+            $processes[$i] = proc_open($pl, $descriptorspec, $pipes[$i]);
+            if (!is_resource($processes[$i])) {
+                throw new \RuntimeException('Can not run GoSSHa.');
+            }
         }
 
         $this->timers['execution'] = new \DateTime();
 
         // run tasks
-        if (sizeof($this->tasks)) {
-            foreach ($this->tasks as $task) {
-                // send command
-                if ($callback) {
-                    call_user_func($callback, (string) $task . ' ');
+        for ($j = 0; $j < $max; $j++) {
+            // send command
+            $k = 0;
+            foreach ($this->tasks as $i => $thread) {
+                if (!isset($thread[$j])) {
+                    continue;
                 }
-                fwrite($pipes[0], $task->getJson() . "\n");
 
-                // read replies
-                while (($stdout = fgets($pipes[1])) !== false) {
+                $task = $thread[$j];
+                if ($callback) {
+                    call_user_func($callback, ($k > 0 ? "\n" : '') . (string) $task . ' ');
+                }
+                fwrite($pipes[$i][0], $task->getJson() . "\n");
+                $k++;
+            }
+
+            // read replies
+            foreach ($this->tasks as $i => $thread) {
+                if (!isset($thread[$j])) {
+                    continue;
+                }
+
+                $task = $thread[$j];
+                while (($stdout = fgets($pipes[$i][1])) !== false) {
                     $data = json_decode($stdout, true);
 
                     if ($data['Type'] === 'Reply') {
@@ -281,21 +366,28 @@ class Dplr
 
                     // next task
                     if (in_array($data['Type'], ['FinalReply', 'UserError'])) {
-                        if ($callback) {
-                            call_user_func($callback, "\n");
-                        }
                         break;
                     }
                 }
+            }
+
+            if ($callback) {
+                call_user_func($callback, "\n");
             }
         }
 
         $this->timers['execution'] = $this->timers['execution']->diff(new \DateTime());
 
-        foreach ($pipes as $pipe) {
-            fclose($pipe);
+        foreach ($pipes as $p) {
+            foreach ($p as $pipe) {
+                fclose($pipe);
+            }
         }
 
-        proc_close($process);
+        foreach ($processes as $process) {
+            proc_close($process);
+        }
+
+        $this->resetTasks();
     }
 }
