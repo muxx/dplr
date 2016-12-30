@@ -39,7 +39,7 @@ $dplr->run(function($step) {
 if (!$dplr->isSuccessful()) {
     echo "Deploy completed with errors.\n";
     foreach($dplr->getFailed() as $item) {
-        echo "[ " . $item->getTask() . " | " . $item->getHost() . " ]\n" . $item->getErrorOutput() . "\n";
+        echo "[ " . $item . " ]\n" . $item->getErrorOutput() . "\n";
     }
 }
 else {
@@ -164,9 +164,8 @@ Detail information about each task:
 ```php
 foreach($dplr->getReports() as $report) {
     echo sprintf(
-        "%s\n    Host: %s\n    Successful: %s\n",
-        (string) $report->getTask(),
-        $report->getHost(),
+        "%s\n    Successful: %s\n",
+        (string) $report,
         $report->isSuccessful() ? 'true' : 'false'
     );
 }
@@ -174,11 +173,9 @@ foreach($dplr->getReports() as $report) {
 /*
     Output
     --
-    CPY /home/webmaster/test/share/parameters.yml -> /home/webmaster/project/app/config/parameters.yml 
-        Host: 54.194.27.92
+    CPY /home/webmaster/test/share/parameters.yml -> /home/webmaster/project/app/config/parameters.yml | 54.194.27.92
         Successful: false
-    CMD cd /home/webmaster/project && ./app/console doctrine:migration:migrate --env=prod --no-debug 
-        Host: 54.194.27.92
+    CMD cd /home/webmaster/project && ./app/console doctrine:migration:migrate --env=prod --no-debug | 54.194.27.92
         Successful: true
 */
 ```

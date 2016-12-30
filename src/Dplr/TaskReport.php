@@ -31,6 +31,11 @@ class TaskReport
         }
     }
 
+    public function __toString()
+    {
+        return sprintf('%s | %s', (string) $this->task, $this->getHost());
+    }
+
     public function isSuccessful()
     {
         return $this->getType() === self::TYPE_REPLY && (bool) $this->data['Success'];
