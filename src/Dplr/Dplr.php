@@ -24,6 +24,8 @@ class Dplr
     protected $publicKey;
     protected $gosshaPath;
 
+    protected $defaultTimeout;
+
     // dplr state
     protected $state;
 
@@ -35,6 +37,8 @@ class Dplr
 
         $this->resetTasks();
         $this->state = self::STATE_INIT;
+
+        $this->defaultTimeout = self::DEFAULT_TIMEOUT;
     }
 
     protected function resetTasks()
@@ -48,6 +52,29 @@ class Dplr
         if ($this->state == self::STATE_RUNNING) {
             throw new \RuntimeException('Dplr is already running.');
         }
+    }
+
+    /**
+     * Returns default timeout for tasks
+     *
+     * @return int
+     */
+    public function getDefaultTimeout()
+    {
+        return $this->defaultTimeout;
+    }
+
+    /**
+     * Set default timeout for tasks
+     *
+     * @param  int  $timeout
+     * @return Dplr
+     */
+    public function setDefaultTimeout($timeout)
+    {
+        $this->defaultTimeout = (int) $timeout;
+
+        return $this;
     }
 
     /**
@@ -124,10 +151,10 @@ class Dplr
      *
      * @param  string $command
      * @param  string $serverGroup (default: null)
-     * @param  int    $timeout     (default: 3600)
+     * @param  int    $timeout     (default: null)
      * @return Dplr
      */
-    public function command($command, $serverGroup = null, $timeout = self::DEFAULT_TIMEOUT)
+    public function command($command, $serverGroup = null, $timeout = null)
     {
         $this->checkState();
 
@@ -135,11 +162,8 @@ class Dplr
             'Action' => 'ssh',
             'Cmd' => $command,
             'Hosts' => $serverGroup ? $this->getServersByGroup($serverGroup) : $this->getServers(),
+            'Timeout' => ( (int) $timeout > 0 ? (int) $timeout : $this->defaultTimeout ) * 1000,
         ];
-
-        if ($timeout) {
-            $data['Timeout'] = (int) $timeout * 1000;
-        }
 
         $this->tasks[$this->tasksThread][] = new Task($data);
 
@@ -153,10 +177,10 @@ class Dplr
      * @param  string $localFile
      * @param  string $remoteFile
      * @param  string $serverGroup (default: null)
-     * @param  int    $timeout     (default: 3600)
+     * @param  int    $timeout     (default: null)
      * @return Dplr
      */
-    public function upload($localFile, $remoteFile, $serverGroup = null, $timeout = self::DEFAULT_TIMEOUT)
+    public function upload($localFile, $remoteFile, $serverGroup = null, $timeout = null)
     {
         $this->checkState();
 
@@ -165,11 +189,8 @@ class Dplr
             'Source' => $localFile,
             'Target' => $remoteFile,
             'Hosts' => $serverGroup ? $this->getServersByGroup($serverGroup) : $this->getServers(),
+            'Timeout' => ( (int) $timeout > 0 ? (int) $timeout : $this->defaultTimeout ) * 1000,
         ];
-
-        if ($timeout) {
-            $data['Timeout'] = (int) $timeout * 1000;
-        }
 
         $this->tasks[$this->tasksThread][] = new Task($data);
 
