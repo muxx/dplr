@@ -343,7 +343,7 @@ class Dplr
                         $this->reports[] = new TaskReport($data, $task);
 
                         if ($callback) {
-                            call_user_func($callback, 'U');
+                            call_user_func($callback, 'J');
                         }
                     } elseif ($data['Type'] === 'FinalReply') {
                         $hosts = $data['TimedOutHosts'];

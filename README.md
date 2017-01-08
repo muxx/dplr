@@ -133,7 +133,7 @@ $dplr->run(function($step) {
 */
 ```
 
-Each dot at the end of task lines means executing of the one action (upload, command) on the certain server. Mark `E` is indicator of failed executing. Mark `U` is indicator of json parsing error. Mark `T` is indicator of executing timeout.
+Each dot at the end of task lines means executing of the one action (upload, command) on the certain server. Mark `E` is indicator of failed executing. Mark `J` is indicator of json parsing error. Mark `T` is indicator of executing timeout.
 
 <a name="result-processing"></a>
 ### Result processing
