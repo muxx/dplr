@@ -118,7 +118,7 @@ class Dplr
      */
     public function getServersByGroup($group)
     {
-        $servers = array();
+        $servers = [];
         foreach ($this->servers as $serverName => $groups) {
             if (in_array($group, $groups)) {
                 $servers[] = $serverName;
@@ -156,12 +156,28 @@ class Dplr
      */
     public function command($command, $serverGroup = null, $timeout = null)
     {
+        if (!is_string($command)) {
+            throw new \InvalidArgumentException('Command must be string');
+        }
+
+        if ($serverGroup && !is_string($serverGroup)) {
+            throw new \InvalidArgumentException('Server group must be string');
+        }
+
+        $servers = null;
+        if ($serverGroup) {
+            $servers = $this->getServersByGroup($serverGroup);
+            if (!count($servers)) {
+                throw new \InvalidArgumentException(sprintf('Not found servers for group "%s"', $serverGroup));
+            }
+        }
+
         $this->checkState();
 
         $data = [
             'Action' => 'ssh',
             'Cmd' => $command,
-            'Hosts' => $serverGroup ? $this->getServersByGroup($serverGroup) : $this->getServers(),
+            'Hosts' => $serverGroup ? $servers : $this->getServers(),
             'Timeout' => ( (int) $timeout > 0 ? (int) $timeout : $this->defaultTimeout ) * 1000,
         ];
 
@@ -182,13 +198,33 @@ class Dplr
      */
     public function upload($localFile, $remoteFile, $serverGroup = null, $timeout = null)
     {
+        if (!is_string($localFile)) {
+            throw new \InvalidArgumentException('Local file must be string');
+        }
+
+        if (!is_string($remoteFile)) {
+            throw new \InvalidArgumentException('Remote file must be string');
+        }
+
+        if ($serverGroup && !is_string($serverGroup)) {
+            throw new \InvalidArgumentException('Server group must be string');
+        }
+
+        $servers = null;
+        if ($serverGroup) {
+            $servers = $this->getServersByGroup($serverGroup);
+            if (!count($servers)) {
+                throw new \InvalidArgumentException(sprintf('Not found servers for group "%s"', $serverGroup));
+            }
+        }
+
         $this->checkState();
 
         $data = [
             'Action' => 'scp',
             'Source' => $localFile,
             'Target' => $remoteFile,
-            'Hosts' => $serverGroup ? $this->getServersByGroup($serverGroup) : $this->getServers(),
+            'Hosts' => $serverGroup ? $servers : $this->getServers(),
             'Timeout' => ( (int) $timeout > 0 ? (int) $timeout : $this->defaultTimeout ) * 1000,
         ];
 
