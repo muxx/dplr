@@ -113,7 +113,7 @@ class Dplr
      * Return servers list of group
      *
      * @access public
-     * @param  mixed $group
+     * @param  string $group
      * @return array
      */
     public function getServersByGroup($group)
@@ -126,6 +126,23 @@ class Dplr
         }
 
         return $servers;
+    }
+
+    /**
+     * Check server group existing
+     *
+     * @param  string $group
+     * @return bool
+     */
+    public function hasGroup($group)
+    {
+        foreach ($this->servers as $serverName => $groups) {
+            if (in_array($group, $groups)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
