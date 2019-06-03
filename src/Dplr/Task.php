@@ -27,13 +27,13 @@ class Task
 
     public function __toString()
     {
-        if ($this->parameters['Action'] == self::ACTION_SSH) {
-            return sprintf("CMD %s", $this->parameters['Cmd']);
-        } elseif ($this->parameters['Action'] == self::ACTION_SCP) {
-            return sprintf("CPY %s -> %s", $this->parameters['Source'], $this->parameters['Target']);
+        if (self::ACTION_SSH == $this->parameters['Action']) {
+            return sprintf('CMD %s', $this->parameters['Cmd']);
+        } elseif (self::ACTION_SCP == $this->parameters['Action']) {
+            return sprintf('CPY %s -> %s', $this->parameters['Source'], $this->parameters['Target']);
         }
 
-        return "";
+        return '';
     }
 
     public static function allowedActions()

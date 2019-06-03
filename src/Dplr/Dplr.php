@@ -3,7 +3,7 @@
 namespace Dplr;
 
 /**
- * Object oriented deployer based on GoSSHa
+ * Object oriented deployer based on GoSSHa.
  *
  * @author Ilyas Salikhov <me@salikhovilyas.ru>
  */
@@ -49,13 +49,13 @@ class Dplr
 
     protected function checkState()
     {
-        if ($this->state == self::STATE_RUNNING) {
+        if (self::STATE_RUNNING == $this->state) {
             throw new \RuntimeException('Dplr is already running.');
         }
     }
 
     /**
-     * Returns default timeout for tasks
+     * Returns default timeout for tasks.
      *
      * @return int
      */
@@ -65,9 +65,10 @@ class Dplr
     }
 
     /**
-     * Set default timeout for tasks
+     * Set default timeout for tasks.
      *
-     * @param  int  $timeout
+     * @param int $timeout
+     *
      * @return Dplr
      */
     public function setDefaultTimeout($timeout)
@@ -78,11 +79,11 @@ class Dplr
     }
 
     /**
-     * Add server for deploying
+     * Add server for deploying.
      *
-     * @access public
-     * @param  mixed $serverName
-     * @param  mixed $groups     (default: null)
+     * @param mixed $serverName
+     * @param mixed $groups     (default: null)
+     *
      * @return Dplr
      */
     public function addServer($serverName, $groups = null)
@@ -90,7 +91,7 @@ class Dplr
         $this->checkState();
 
         if ($groups && !is_array($groups)) {
-            $groups = array($groups);
+            $groups = [$groups];
         }
 
         $this->servers[$serverName] = $groups;
@@ -99,9 +100,8 @@ class Dplr
     }
 
     /**
-     * Return servers list
+     * Return servers list.
      *
-     * @access public
      * @return array
      */
     public function getServers()
@@ -110,10 +110,10 @@ class Dplr
     }
 
     /**
-     * Return servers list of group
+     * Return servers list of group.
      *
-     * @access public
-     * @param  string $group
+     * @param string $group
+     *
      * @return array
      */
     public function getServersByGroup($group)
@@ -129,9 +129,10 @@ class Dplr
     }
 
     /**
-     * Check server group existing
+     * Check server group existing.
      *
-     * @param  string $group
+     * @param string $group
+     *
      * @return bool
      */
     public function hasGroup($group)
@@ -146,7 +147,7 @@ class Dplr
     }
 
     /**
-     * Creating new thread
+     * Creating new thread.
      *
      * @return Dplr
      */
@@ -157,18 +158,19 @@ class Dplr
             return $this;
         }
 
-        $this->tasksThread++;
+        ++$this->tasksThread;
         $this->tasks[$this->tasksThread] = [];
 
         return $this;
     }
 
     /**
-     * Adding command task
+     * Adding command task.
      *
-     * @param  string $command
-     * @param  string $serverGroup (default: null)
-     * @param  int    $timeout     (default: null)
+     * @param string $command
+     * @param string $serverGroup (default: null)
+     * @param int    $timeout     (default: null)
+     *
      * @return Dplr
      */
     public function command($command, $serverGroup = null, $timeout = null)
@@ -195,7 +197,7 @@ class Dplr
             'Action' => 'ssh',
             'Cmd' => $command,
             'Hosts' => $serverGroup ? $servers : $this->getServers(),
-            'Timeout' => ( (int) $timeout > 0 ? (int) $timeout : $this->defaultTimeout ) * 1000,
+            'Timeout' => ((int) $timeout > 0 ? (int) $timeout : $this->defaultTimeout) * 1000,
         ];
 
         $this->tasks[$this->tasksThread][] = new Task($data);
@@ -204,13 +206,13 @@ class Dplr
     }
 
     /**
-     * Adding uploading task
+     * Adding uploading task.
      *
-     * @access public
-     * @param  string $localFile
-     * @param  string $remoteFile
-     * @param  string $serverGroup (default: null)
-     * @param  int    $timeout     (default: null)
+     * @param string $localFile
+     * @param string $remoteFile
+     * @param string $serverGroup (default: null)
+     * @param int    $timeout     (default: null)
+     *
      * @return Dplr
      */
     public function upload($localFile, $remoteFile, $serverGroup = null, $timeout = null)
@@ -242,7 +244,7 @@ class Dplr
             'Source' => $localFile,
             'Target' => $remoteFile,
             'Hosts' => $serverGroup ? $servers : $this->getServers(),
-            'Timeout' => ( (int) $timeout > 0 ? (int) $timeout : $this->defaultTimeout ) * 1000,
+            'Timeout' => ((int) $timeout > 0 ? (int) $timeout : $this->defaultTimeout) * 1000,
         ];
 
         $this->tasks[$this->tasksThread][] = new Task($data);
@@ -251,10 +253,10 @@ class Dplr
     }
 
     /**
-     * Run tasks on servers
+     * Run tasks on servers.
      *
-     * @access public
-     * @param  callable $callback (default: null)
+     * @param callable $callback (default: null)
+     *
      * @return Dplr
      */
     public function run(callable $callback = null)
@@ -269,10 +271,9 @@ class Dplr
     }
 
     /**
-     * Check that all task executed successfully
+     * Check that all task executed successfully.
      *
-     * @access public
-     * @return boolean
+     * @return bool
      */
     public function isSuccessful()
     {
@@ -286,9 +287,8 @@ class Dplr
     }
 
     /**
-     * Return short report about task executing
+     * Return short report about task executing.
      *
-     * @access public
      * @return array
      */
     public function getReport()
@@ -304,9 +304,9 @@ class Dplr
 
         foreach ($this->reports as $report) {
             if ($report->isSuccessful()) {
-                $result['successful']++;
+                ++$result['successful'];
             } else {
-                $result['failed']++;
+                ++$result['failed'];
             }
         }
 
@@ -314,9 +314,8 @@ class Dplr
     }
 
     /**
-     * Return failed task reports
+     * Return failed task reports.
      *
-     * @access public
      * @return array
      */
     public function getFailed()
@@ -327,9 +326,8 @@ class Dplr
     }
 
     /**
-     * Return all reports
+     * Return all reports.
      *
-     * @access public
      * @return array
      */
     public function getReports()
@@ -361,9 +359,9 @@ class Dplr
         }
 
         $descriptorspec = [
-            0 => ["pipe", "r"],
-            1 => ["pipe", "w"],
-            2 => ["pipe", "w"],
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
         ];
 
         $pipes = array_fill(0, count($this->tasks), []);
@@ -380,7 +378,7 @@ class Dplr
         $this->timers['execution'] = new \DateTime();
 
         // run tasks
-        for ($j = 0; $j < $max; $j++) {
+        for ($j = 0; $j < $max; ++$j) {
             // send command
             $k = 0;
             foreach ($this->tasks as $i => $thread) {
@@ -393,7 +391,7 @@ class Dplr
                     call_user_func($callback, ($k > 0 ? "\n" : '') . (string) $task . ' ');
                 }
                 fwrite($pipes[$i][0], $task->getJson() . "\n");
-                $k++;
+                ++$k;
             }
 
             // read replies
@@ -403,23 +401,23 @@ class Dplr
                 }
 
                 $task = $thread[$j];
-                while (($stdout = fgets($pipes[$i][1])) !== false) {
+                while (false !== ($stdout = fgets($pipes[$i][1]))) {
                     $data = json_decode($stdout, true);
 
-                    if ($data['Type'] === 'Reply') {
+                    if ('Reply' === $data['Type']) {
                         $report = new TaskReport($data, $task);
                         $this->reports[] = $report;
 
                         if ($callback) {
                             call_user_func($callback, $report->isSuccessful() ? '.' : 'E');
                         }
-                    } elseif ($data['Type'] === 'UserError') {
+                    } elseif ('UserError' === $data['Type']) {
                         $this->reports[] = new TaskReport($data, $task);
 
                         if ($callback) {
                             call_user_func($callback, 'J');
                         }
-                    } elseif ($data['Type'] === 'FinalReply') {
+                    } elseif ('FinalReply' === $data['Type']) {
                         $hosts = $data['TimedOutHosts'];
                         if (count($hosts)) {
                             foreach ($hosts as $host => $v) {
