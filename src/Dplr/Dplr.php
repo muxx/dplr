@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dplr;
 
 /**
@@ -9,27 +11,60 @@ namespace Dplr;
  */
 class Dplr
 {
-    const DEFAULT_TIMEOUT = 3600;
+    private const DEFAULT_TIMEOUT = 3600;
 
-    const STATE_INIT = 'init';
-    const STATE_RUNNING = 'running';
+    private const STATE_INIT = 'init';
+    private const STATE_RUNNING = 'running';
 
+    /**
+     * @var array
+     */
     protected $servers = [];
+
+    /**
+     * @var array
+     */
     protected $tasks = [];
+
+    /**
+     * @var int
+     */
     protected $tasksThread = 0;
+
+    /**
+     * @var array
+     */
     protected $reports = [];
+
+    /**
+     * @var array
+     */
     protected $timers = [];
 
+    /**
+     * @var string
+     */
     protected $user;
+
+    /**
+     * @var string|null
+     */
     protected $publicKey;
+
+    /**
+     * @var string
+     */
     protected $gosshaPath;
 
+    /**
+     * @var int
+     */
     protected $defaultTimeout;
 
     // dplr state
     protected $state;
 
-    public function __construct($user, $gosshaPath, $publicKey = null)
+    public function __construct(string $user, string $gosshaPath, string $publicKey = null)
     {
         $this->user = $user;
         $this->publicKey = $publicKey;
@@ -41,39 +76,33 @@ class Dplr
         $this->defaultTimeout = self::DEFAULT_TIMEOUT;
     }
 
-    protected function resetTasks()
+    protected function resetTasks(): void
     {
         $this->tasks = [[]];
         $this->tasksThread = 0;
     }
 
-    protected function checkState()
+    protected function checkState(): void
     {
-        if (self::STATE_RUNNING == $this->state) {
+        if (self::STATE_RUNNING === $this->state) {
             throw new \RuntimeException('Dplr is already running.');
         }
     }
 
     /**
      * Returns default timeout for tasks.
-     *
-     * @return int
      */
-    public function getDefaultTimeout()
+    public function getDefaultTimeout(): int
     {
         return $this->defaultTimeout;
     }
 
     /**
      * Set default timeout for tasks.
-     *
-     * @param int $timeout
-     *
-     * @return Dplr
      */
-    public function setDefaultTimeout($timeout)
+    public function setDefaultTimeout(int $timeout): Dplr
     {
-        $this->defaultTimeout = (int) $timeout;
+        $this->defaultTimeout = $timeout;
 
         return $this;
     }
@@ -81,12 +110,10 @@ class Dplr
     /**
      * Add server for deploying.
      *
-     * @param mixed $serverName
-     * @param mixed $groups     (default: null)
-     *
-     * @return Dplr
+     * @param string            $serverName
+     * @param string|array|null $groups     (default: null)
      */
-    public function addServer($serverName, $groups = null)
+    public function addServer(string $serverName, $groups = null): Dplr
     {
         $this->checkState();
 
@@ -101,10 +128,8 @@ class Dplr
 
     /**
      * Return servers list.
-     *
-     * @return array
      */
-    public function getServers()
+    public function getServers(): array
     {
         return array_keys($this->servers);
     }
@@ -116,11 +141,11 @@ class Dplr
      *
      * @return array
      */
-    public function getServersByGroup($group)
+    public function getServersByGroup(string $group): array
     {
         $servers = [];
         foreach ($this->servers as $serverName => $groups) {
-            if (in_array($group, $groups)) {
+            if (in_array($group, $groups, true)) {
                 $servers[] = $serverName;
             }
         }
@@ -130,15 +155,11 @@ class Dplr
 
     /**
      * Check server group existing.
-     *
-     * @param string $group
-     *
-     * @return bool
      */
-    public function hasGroup($group)
+    public function hasGroup(string $group): bool
     {
         foreach ($this->servers as $serverName => $groups) {
-            if (in_array($group, $groups)) {
+            if (in_array($group, $groups, true)) {
                 return true;
             }
         }
@@ -148,10 +169,8 @@ class Dplr
 
     /**
      * Creating new thread.
-     *
-     * @return Dplr
      */
-    public function newThread()
+    public function newThread(): Dplr
     {
         // if current thread is empty, use it
         if (!count($this->tasks[$this->tasksThread])) {
@@ -166,25 +185,11 @@ class Dplr
 
     /**
      * Adding command task.
-     *
-     * @param string $command
-     * @param string $serverGroup (default: null)
-     * @param int    $timeout     (default: null)
-     *
-     * @return Dplr
      */
-    public function command($command, $serverGroup = null, $timeout = null)
+    public function command(string $command, string $serverGroup = null, int $timeout = null): Dplr
     {
-        if (!is_string($command)) {
-            throw new \InvalidArgumentException('Command must be string');
-        }
-
-        if ($serverGroup && !is_string($serverGroup)) {
-            throw new \InvalidArgumentException('Server group must be string');
-        }
-
         $servers = null;
-        if ($serverGroup) {
+        if (null !== $serverGroup) {
             $servers = $this->getServersByGroup($serverGroup);
             if (!count($servers)) {
                 throw new \InvalidArgumentException(sprintf('Not found servers for group "%s"', $serverGroup));
@@ -194,10 +199,10 @@ class Dplr
         $this->checkState();
 
         $data = [
-            'Action' => 'ssh',
+            'Action' => Task::ACTION_SSH,
             'Cmd' => $command,
             'Hosts' => $serverGroup ? $servers : $this->getServers(),
-            'Timeout' => ((int) $timeout > 0 ? (int) $timeout : $this->defaultTimeout) * 1000,
+            'Timeout' => ($timeout > 0 ? $timeout : $this->defaultTimeout) * 1000,
         ];
 
         $this->tasks[$this->tasksThread][] = new Task($data);
@@ -207,30 +212,11 @@ class Dplr
 
     /**
      * Adding uploading task.
-     *
-     * @param string $localFile
-     * @param string $remoteFile
-     * @param string $serverGroup (default: null)
-     * @param int    $timeout     (default: null)
-     *
-     * @return Dplr
      */
-    public function upload($localFile, $remoteFile, $serverGroup = null, $timeout = null)
+    public function upload(string $localFile, string $remoteFile, string $serverGroup = null, int $timeout = null): Dplr
     {
-        if (!is_string($localFile)) {
-            throw new \InvalidArgumentException('Local file must be string');
-        }
-
-        if (!is_string($remoteFile)) {
-            throw new \InvalidArgumentException('Remote file must be string');
-        }
-
-        if ($serverGroup && !is_string($serverGroup)) {
-            throw new \InvalidArgumentException('Server group must be string');
-        }
-
         $servers = null;
-        if ($serverGroup) {
+        if (null !== $serverGroup) {
             $servers = $this->getServersByGroup($serverGroup);
             if (!count($servers)) {
                 throw new \InvalidArgumentException(sprintf('Not found servers for group "%s"', $serverGroup));
@@ -240,11 +226,11 @@ class Dplr
         $this->checkState();
 
         $data = [
-            'Action' => 'scp',
+            'Action' => Task::ACTION_SCP,
             'Source' => $localFile,
             'Target' => $remoteFile,
             'Hosts' => $serverGroup ? $servers : $this->getServers(),
-            'Timeout' => ((int) $timeout > 0 ? (int) $timeout : $this->defaultTimeout) * 1000,
+            'Timeout' => ($timeout > 0 ? $timeout : $this->defaultTimeout) * 1000,
         ];
 
         $this->tasks[$this->tasksThread][] = new Task($data);
@@ -254,12 +240,8 @@ class Dplr
 
     /**
      * Run tasks on servers.
-     *
-     * @param callable $callback (default: null)
-     *
-     * @return Dplr
      */
-    public function run(callable $callback = null)
+    public function run(callable $callback = null): Dplr
     {
         $this->state = self::STATE_RUNNING;
 
@@ -272,10 +254,8 @@ class Dplr
 
     /**
      * Check that all task executed successfully.
-     *
-     * @return bool
      */
-    public function isSuccessful()
+    public function isSuccessful(): bool
     {
         foreach ($this->reports as $report) {
             if (!$report->isSuccessful()) {
@@ -288,13 +268,11 @@ class Dplr
 
     /**
      * Return short report about task executing.
-     *
-     * @return array
      */
-    public function getReport()
+    public function getReport(): array
     {
         $result = [
-            'total' => sizeof($this->reports),
+            'total' => count($this->reports),
             'successful' => 0,
             'failed' => 0,
             'timers' => [
@@ -316,11 +294,11 @@ class Dplr
     /**
      * Return failed task reports.
      *
-     * @return array
+     * @return array<TaskReport>
      */
-    public function getFailed()
+    public function getFailed(): array
     {
-        return array_filter($this->reports, function ($item) {
+        return array_filter($this->reports, function (TaskReport $item) {
             return !$item->isSuccessful();
         });
     }
@@ -328,14 +306,14 @@ class Dplr
     /**
      * Return all reports.
      *
-     * @return array
+     * @return array<TaskReport>
      */
-    public function getReports()
+    public function getReports(): array
     {
         return $this->reports;
     }
 
-    protected function runTasks($callback = null)
+    protected function runTasks(callable $callback = null): void
     {
         $max = 0;
         // clear empty threads and search max thread
@@ -388,7 +366,7 @@ class Dplr
 
                 $task = $thread[$j];
                 if ($callback) {
-                    call_user_func($callback, ($k > 0 ? "\n" : '') . (string) $task . ' ');
+                    call_user_func($callback, ($k > 0 ? "\n" : '') . $task . ' ');
                 }
                 fwrite($pipes[$i][0], $task->getJson() . "\n");
                 ++$k;

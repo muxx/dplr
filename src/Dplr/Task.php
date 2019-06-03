@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dplr;
 
 class Task
 {
-    const ACTION_SSH = 'ssh';
-    const ACTION_SCP = 'scp';
+    public const ACTION_SSH = 'ssh';
+    public const ACTION_SCP = 'scp';
+    public const ACTIONS = [self::ACTION_SSH, self::ACTION_SCP];
 
     protected $parameters = [];
 
@@ -14,11 +17,11 @@ class Task
         if (!isset($parameters['Action'])) {
             throw new \InvalidArgumentException('Not found `Action` parameter.');
         }
-        if (!in_array($parameters['Action'], self::allowedActions())) {
+        if (!in_array($parameters['Action'], self::ACTIONS, true)) {
             throw new \InvalidArgumentException(sprintf(
                 'Action "%s" not allowed. Allowed actions: %s',
                 $parameters['Action'],
-                self::allowedActions()
+                self::ACTIONS
             ));
         }
 
@@ -27,27 +30,29 @@ class Task
 
     public function __toString()
     {
-        if (self::ACTION_SSH == $this->parameters['Action']) {
+        if (self::ACTION_SSH === $this->parameters['Action']) {
             return sprintf('CMD %s', $this->parameters['Cmd']);
-        } elseif (self::ACTION_SCP == $this->parameters['Action']) {
+        }
+
+        if (self::ACTION_SCP === $this->parameters['Action']) {
             return sprintf('CPY %s -> %s', $this->parameters['Source'], $this->parameters['Target']);
         }
 
         return '';
     }
 
-    public static function allowedActions()
-    {
-        return [self::ACTION_SSH, self::ACTION_SCP];
-    }
-
-    public function getParameters()
+    public function getParameters(): array
     {
         return $this->parameters;
     }
 
-    public function getJson()
+    public function getJson(): string
     {
-        return json_encode($this->parameters);
+        $json = json_encode($this->parameters);
+        if (false === $json) {
+            throw new \InvalidArgumentException('Cannot encode parameters to json.');
+        }
+
+        return $json;
     }
 }

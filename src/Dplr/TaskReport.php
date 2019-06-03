@@ -1,14 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dplr;
 
 class TaskReport
 {
-    const TYPE_USER_ERROR = 'UserError';
-    const TYPE_REPLY = 'Reply';
-    const TYPE_TIMEOUT = 'Timeout';
+    public const TYPE_USER_ERROR = 'UserError';
+    public const TYPE_REPLY = 'Reply';
+    public const TYPE_TIMEOUT = 'Timeout';
 
+    public const TYPES = [
+        self::TYPE_USER_ERROR,
+        self::TYPE_REPLY,
+        self::TYPE_TIMEOUT,
+    ];
+
+    /**
+     * @var array
+     */
     protected $data;
+
+    /**
+     * @var Task
+     */
     protected $task;
 
     public function __construct(array $data, Task $task = null)
@@ -16,11 +31,11 @@ class TaskReport
         if (!isset($data['Type'])) {
             throw new \InvalidArgumentException('Not found `Type` parameter.');
         }
-        if (!in_array($data['Type'], self::getTypes())) {
+        if (!in_array($data['Type'], self::TYPES, true)) {
             throw new \InvalidArgumentException(sprintf(
                 'Type "%s" not allowed. Allowed types: %s',
                 $data['Type'],
-                self::getTypes()
+                self::TYPES
             ));
         }
 
@@ -40,14 +55,9 @@ class TaskReport
         return sprintf('%s | %s', (string) $this->task, $this->getHost());
     }
 
-    public function isSuccessful()
+    public function isSuccessful(): bool
     {
         return self::TYPE_REPLY === $this->getType() && (bool) $this->data['Success'];
-    }
-
-    public static function getTypes()
-    {
-        return [self::TYPE_REPLY, self::TYPE_USER_ERROR, self::TYPE_TIMEOUT];
     }
 
     public function setTask(Task $task)
@@ -55,38 +65,40 @@ class TaskReport
         $this->task = $task;
     }
 
-    public function getTask()
+    public function getTask(): Task
     {
         return $this->task;
     }
 
-    public function getHost()
+    public function getHost(): string
     {
         return $this->data['Hostname'];
     }
 
-    public function getType()
+    public function getType(): string
     {
         return $this->data['Type'];
     }
 
-    public function getOutput()
+    public function getOutput(): ?string
     {
         if (!isset($this->data['Stdout'])) {
-            return;
+            return null;
         }
 
         return $this->data['Stdout'];
     }
 
-    public function getErrorOutput()
+    public function getErrorOutput(): ?string
     {
         if (isset($this->data['Stderr'])) {
             return $this->data['Stderr'] ?: $this->data['Stdout'];
-        } elseif (isset($this->data['ErrorMsg'])) {
+        }
+
+        if (isset($this->data['ErrorMsg'])) {
             return $this->data['ErrorMsg'];
         }
 
-        return;
+        return null;
     }
 }
