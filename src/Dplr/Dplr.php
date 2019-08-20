@@ -82,6 +82,17 @@ class Dplr
         $this->tasksThread = 0;
     }
 
+    public function hasTasks(): bool
+    {
+        foreach ($this->tasks as $taskThread) {
+            if (count($taskThread) > 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     protected function checkState(): void
     {
         if (self::STATE_RUNNING === $this->state) {
