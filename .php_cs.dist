@@ -8,15 +8,31 @@ $finder = Finder::create()
 ;
 
 return Config::create()
+    ->setRiskyAllowed(true)
     ->setRules([
         '@Symfony' => true,
+        '@Symfony:risky' => true,
+
+        // php file
+        'concat_space' => ['spacing' => 'one'],
+
+        // namespace and imports
+        'ordered_imports' => true,
+
+        // standard functions and operators
+        'native_constant_invocation' => false,
+        'native_function_invocation' => false,
+        'modernize_types_casting' => true,
+        'is_null' => true,
+
+        // arrays
         'array_syntax' => [
             'syntax' => 'short',
         ],
-        'concat_space' => [
-            'spacing' => 'one',
-        ],
 
+        // phpdoc
+        'phpdoc_annotation_without_dot' => false,
+        'phpdoc_summary' => false,
     ])
     ->setFinder($finder)
     ->setCacheFile(__DIR__ . '/cache/.php_cs.cache');

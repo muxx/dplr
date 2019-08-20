@@ -100,7 +100,7 @@ class Dplr
     /**
      * Set default timeout for tasks.
      */
-    public function setDefaultTimeout(int $timeout): Dplr
+    public function setDefaultTimeout(int $timeout): self
     {
         $this->defaultTimeout = $timeout;
 
@@ -113,7 +113,7 @@ class Dplr
      * @param string            $serverName
      * @param string|array|null $groups     (default: null)
      */
-    public function addServer(string $serverName, $groups = null): Dplr
+    public function addServer(string $serverName, $groups = null): self
     {
         $this->checkState();
 
@@ -170,7 +170,7 @@ class Dplr
     /**
      * Creating new thread.
      */
-    public function newThread(): Dplr
+    public function newThread(): self
     {
         // if current thread is empty, use it
         if (!count($this->tasks[$this->tasksThread])) {
@@ -186,7 +186,7 @@ class Dplr
     /**
      * Adding command task.
      */
-    public function command(string $command, string $serverGroup = null, int $timeout = null): Dplr
+    public function command(string $command, string $serverGroup = null, int $timeout = null): self
     {
         $servers = null;
         if (null !== $serverGroup) {
@@ -213,7 +213,7 @@ class Dplr
     /**
      * Adding uploading task.
      */
-    public function upload(string $localFile, string $remoteFile, string $serverGroup = null, int $timeout = null): Dplr
+    public function upload(string $localFile, string $remoteFile, string $serverGroup = null, int $timeout = null): self
     {
         $servers = null;
         if (null !== $serverGroup) {
@@ -241,7 +241,7 @@ class Dplr
     /**
      * Run tasks on servers.
      */
-    public function run(callable $callback = null): Dplr
+    public function run(callable $callback = null): self
     {
         $this->state = self::STATE_RUNNING;
 
