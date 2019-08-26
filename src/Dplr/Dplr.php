@@ -324,6 +324,22 @@ class Dplr
         return $this->reports;
     }
 
+    public function getSingleReportOutput(): ?string
+    {
+        if (!count($this->reports)) {
+            throw new \OutOfRangeException('Not found task reports.');
+        }
+
+        if (count($this->reports) > 1) {
+            throw new \OutOfRangeException('There are more than one task report.');
+        }
+
+        /** @var TaskReport $report */
+        $report = $this->reports[0];
+
+        return $report->getOutput();
+    }
+
     protected function runTasks(callable $callback = null): void
     {
         $max = 0;
