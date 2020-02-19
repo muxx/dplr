@@ -21,6 +21,10 @@ class DplrTest extends TestCase
             ->addServer('remote_3', ['job', 'all'])
         ;
 
+        $this->assertTrue($d->hasGroup('job'));
+        $this->assertTrue($d->hasGroup('all'));
+        $this->assertFalse($d->hasGroup('not_exists'));
+
         $d
             ->command('touch 1.txt', 'job')
             ->command('ls -a', 'all')
@@ -28,11 +32,15 @@ class DplrTest extends TestCase
             ->command('rm 1.txt', 'job')
         ;
 
+        $this->assertTrue($d->hasTasks());
+
         $output = '';
         $d->run(function (string $s) use (&$output) {
             $output .= $s;
         });
 
+        $this->assertFalse($d->isSuccessful());
+        $this->assertFalse($d->hasTasks());
         $this->assertEquals("CMD touch 1.txt .\nCMD ls -a ...\nCMD cat 2.txt E\nCMD rm 1.txt .\n", $output);
 
         $report = $d->getReport();
@@ -41,12 +49,11 @@ class DplrTest extends TestCase
         $this->assertEquals(1, $report['failed']);
 
         $reports = $d->getReports();
-        for ($i = 1; $i <= 3; $i++) {
+        for ($i = 1; $i <= 3; ++$i) {
             /** @var TaskReport $report */
             $report = $reports[$i];
             if ('remote_3' === $report->getHost()) {
                 $this->assertEquals(".\n..\n.ssh\n1.txt\n", $report->getOutput());
-
             } else {
                 $this->assertEquals(".\n..\n.ssh\n", $report->getOutput());
             }
@@ -60,6 +67,8 @@ class DplrTest extends TestCase
                 $this->assertTrue($report->isSuccessful());
             }
         }
+
+        $this->assertCount(1, $d->getFailed());
     }
 
     private static function getDplr(): Dplr

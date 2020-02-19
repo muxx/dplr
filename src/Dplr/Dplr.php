@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Dplr;
 
+use DateTime;
+use InvalidArgumentException;
+use OutOfRangeException;
+use RuntimeException;
+
 /**
  * Object oriented deployer based on GoSSHa.
  *
@@ -96,11 +101,11 @@ class Dplr
     protected function checkState(): void
     {
         if (self::STATE_RUNNING === $this->state) {
-            throw new \RuntimeException('Dplr is already running.');
+            throw new RuntimeException('Dplr is already running.');
         }
     }
 
-    /**
+    /*
      * Returns default timeout for tasks.
      */
     public function getDefaultTimeout(): int
@@ -108,7 +113,7 @@ class Dplr
         return $this->defaultTimeout;
     }
 
-    /**
+    /*
      * Set default timeout for tasks.
      */
     public function setDefaultTimeout(int $timeout): self
@@ -164,7 +169,7 @@ class Dplr
         return $servers;
     }
 
-    /**
+    /*
      * Check server group existing.
      */
     public function hasGroup(string $group): bool
@@ -178,7 +183,7 @@ class Dplr
         return false;
     }
 
-    /**
+    /*
      * Creating new thread.
      */
     public function newThread(): self
@@ -194,7 +199,7 @@ class Dplr
         return $this;
     }
 
-    /**
+    /*
      * Adding command task.
      */
     public function command(string $command, string $serverGroup = null, int $timeout = null): self
@@ -203,7 +208,7 @@ class Dplr
         if (null !== $serverGroup) {
             $servers = $this->getServersByGroup($serverGroup);
             if (!count($servers)) {
-                throw new \InvalidArgumentException(sprintf('Not found servers for group "%s"', $serverGroup));
+                throw new InvalidArgumentException(sprintf('Not found servers for group "%s"', $serverGroup));
             }
         }
 
@@ -221,7 +226,7 @@ class Dplr
         return $this;
     }
 
-    /**
+    /*
      * Adding uploading task.
      */
     public function upload(string $localFile, string $remoteFile, string $serverGroup = null, int $timeout = null): self
@@ -230,7 +235,7 @@ class Dplr
         if (null !== $serverGroup) {
             $servers = $this->getServersByGroup($serverGroup);
             if (!count($servers)) {
-                throw new \InvalidArgumentException(sprintf('Not found servers for group "%s"', $serverGroup));
+                throw new InvalidArgumentException(sprintf('Not found servers for group "%s"', $serverGroup));
             }
         }
 
@@ -249,7 +254,7 @@ class Dplr
         return $this;
     }
 
-    /**
+    /*
      * Run tasks on servers.
      */
     public function run(callable $callback = null): self
@@ -263,7 +268,7 @@ class Dplr
         return $this;
     }
 
-    /**
+    /*
      * Check that all task executed successfully.
      */
     public function isSuccessful(): bool
@@ -277,7 +282,7 @@ class Dplr
         return true;
     }
 
-    /**
+    /*
      * Return short report about task executing.
      */
     public function getReport(): array
@@ -309,7 +314,7 @@ class Dplr
      */
     public function getFailed(): array
     {
-        return array_filter($this->reports, function (TaskReport $item) {
+        return array_filter($this->reports, static function (TaskReport $item) {
             return !$item->isSuccessful();
         });
     }
@@ -327,11 +332,11 @@ class Dplr
     public function getSingleReportOutput(): ?string
     {
         if (!count($this->reports)) {
-            throw new \OutOfRangeException('Not found task reports.');
+            throw new OutOfRangeException('Not found task reports.');
         }
 
         if (count($this->reports) > 1) {
-            throw new \OutOfRangeException('There are more than one task report.');
+            throw new OutOfRangeException('There are more than one task report.');
         }
 
         /** @var TaskReport $report */
@@ -347,10 +352,8 @@ class Dplr
         foreach ($this->tasks as $i => $thread) {
             if (!count($thread)) {
                 unset($this->tasks[$i]);
-            } else {
-                if (count($thread) > $max) {
-                    $max = count($thread);
-                }
+            } elseif (count($thread) > $max) {
+                $max = count($thread);
             }
         }
 
@@ -376,11 +379,11 @@ class Dplr
         foreach ($this->tasks as $i => $thread) {
             $processes[$i] = proc_open($pl, $descriptorspec, $pipes[$i]);
             if (!is_resource($processes[$i])) {
-                throw new \RuntimeException('Can not run GoSSHa.');
+                throw new RuntimeException('Can not run GoSSHa.');
             }
         }
 
-        $this->timers['execution'] = new \DateTime();
+        $this->timers['execution'] = new DateTime();
 
         // run tasks
         for ($j = 0; $j < $max; ++$j) {
@@ -394,9 +397,9 @@ class Dplr
                 /** @var Task $task */
                 $task = $thread[$j];
                 if ($callback) {
-                    call_user_func($callback, ($k > 0 ? "\n" : '') . $task . ' ');
+                    $callback(($k > 0 ? "\n" : '') . $task . ' ');
                 }
-                fwrite($pipes[$i][0], $task->getJson() . "\n");
+                fwrite($pipes[$i][0], json_encode($task, JSON_THROW_ON_ERROR) . "\n");
                 ++$k;
             }
 
@@ -408,20 +411,20 @@ class Dplr
 
                 $task = $thread[$j];
                 while (false !== ($stdout = fgets($pipes[$i][1]))) {
-                    $data = json_decode($stdout, true);
+                    $data = json_decode($stdout, true, 512, JSON_THROW_ON_ERROR);
 
                     if ('Reply' === $data['Type']) {
                         $report = new TaskReport($data, $task);
                         $this->reports[] = $report;
 
                         if ($callback) {
-                            call_user_func($callback, $report->isSuccessful() ? '.' : 'E');
+                            $callback($report->isSuccessful() ? '.' : 'E');
                         }
                     } elseif ('UserError' === $data['Type']) {
                         $this->reports[] = new TaskReport($data, $task);
 
                         if ($callback) {
-                            call_user_func($callback, 'J');
+                            $callback('J');
                         }
                     } elseif ('FinalReply' === $data['Type']) {
                         $hosts = $data['TimedOutHosts'];
@@ -436,7 +439,7 @@ class Dplr
                                 $this->reports[] = new TaskReport($d, $task);
 
                                 if ($callback) {
-                                    call_user_func($callback, 'T');
+                                    $callback('T');
                                 }
                             }
                         }
@@ -450,11 +453,11 @@ class Dplr
             }
 
             if ($callback) {
-                call_user_func($callback, "\n");
+                $callback("\n");
             }
         }
 
-        $this->timers['execution'] = $this->timers['execution']->diff(new \DateTime());
+        $this->timers['execution'] = $this->timers['execution']->diff(new DateTime());
 
         foreach ($pipes as $p) {
             foreach ($p as $pipe) {

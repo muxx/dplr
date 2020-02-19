@@ -32,7 +32,7 @@ class TaskTest extends TestCase
         ]);
 
         $this->assertEquals('CMD ls -al', (string) $task);
-        $this->assertJsonStringEqualsJsonString('{"Action":"ssh","Cmd":"ls -al"}', $task->getJson());
+        $this->assertJsonStringEqualsJsonString('{"Action":"ssh","Cmd":"ls -al"}', json_encode($task));
     }
 
     public function testScpTask(): void
@@ -46,7 +46,7 @@ class TaskTest extends TestCase
         $this->assertEquals('CPY /home/user1/1.txt -> /home/user2/2.txt', (string) $task);
         $this->assertJsonStringEqualsJsonString(
             '{"Action":"scp","Source":"/home/user1/1.txt","Target":"/home/user2/2.txt"}',
-            $task->getJson()
+            json_encode($task)
         );
     }
 }

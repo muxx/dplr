@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dplr;
 
-class Task
+class Task implements \JsonSerializable
 {
     public const ACTION_SSH = 'ssh';
     public const ACTION_SCP = 'scp';
@@ -46,13 +46,8 @@ class Task
         return $this->parameters;
     }
 
-    public function getJson(): string
+    public function jsonSerialize(): array
     {
-        $json = json_encode($this->parameters);
-        if (false === $json) {
-            throw new \InvalidArgumentException('Cannot encode parameters to json.');
-        }
-
-        return $json;
+        return $this->parameters;
     }
 }

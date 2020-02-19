@@ -63,7 +63,7 @@ class TaskReportTest extends TestCase
         );
 
         $this->assertTrue($taskReport->isSuccessful());
-        $this->assertEquals(null, $taskReport->getErrorOutput());
+        $this->assertNull($taskReport->getErrorOutput());
         $this->assertEquals('output', $taskReport->getOutput());
     }
 }
