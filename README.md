@@ -9,6 +9,7 @@ Object oriented deployer based on [GoSSHa](https://github.com/YuriyNasretdinov/G
     * [Register tasks](#register-tasks)
     * [Running](#running)
     * [Result processing](#result-processing)
+* [Tests](#tests)
 
 ## Usage
 
@@ -186,3 +187,13 @@ Each element in arrays returned by `$dplr->getFailed()` and `$dplr->getReports()
 - `getTask()` - information about task (instance of `Dplr\Task`)
 - `getOutput()` - output of task
 - `getErrorOutput()` - output of error task
+
+## Tests
+
+Execute the commands below to run the tests.
+
+```shell script
+make sshkeygen
+docker-compose up -d
+make check
+```

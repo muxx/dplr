@@ -391,6 +391,7 @@ class Dplr
                     continue;
                 }
 
+                /** @var Task $task */
                 $task = $thread[$j];
                 if ($callback) {
                     call_user_func($callback, ($k > 0 ? "\n" : '') . $task . ' ');

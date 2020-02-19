@@ -33,9 +33,9 @@ class TaskReport
         }
         if (!in_array($data['Type'], self::TYPES, true)) {
             throw new \InvalidArgumentException(sprintf(
-                'Type "%s" not allowed. Allowed types: %s',
+                'Type "%s" not allowed. Allowed types: %s.',
                 $data['Type'],
-                self::TYPES
+                implode(', ', self::TYPES)
             ));
         }
 

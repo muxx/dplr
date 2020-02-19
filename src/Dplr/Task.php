@@ -19,9 +19,9 @@ class Task
         }
         if (!in_array($parameters['Action'], self::ACTIONS, true)) {
             throw new \InvalidArgumentException(sprintf(
-                'Action "%s" not allowed. Allowed actions: %s',
+                'Action "%s" not allowed. Allowed actions: %s.',
                 $parameters['Action'],
-                self::ACTIONS
+                implode(', ', self::ACTIONS)
             ));
         }
 

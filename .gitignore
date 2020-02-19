@@ -1,5 +1,8 @@
 composer.lock
 composer.phar
+.phpunit.result.cache
 .idea/
+docker/images/dplr/key*
+docker/images/remote/key*
 cache/
 vendor/

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://schema.phpunit.de/8.5/phpunit.xsd"
+        bootstrap="./tests/bootstrap.php"
+        colors="true"
+        verbose="true"
+        processIsolation="false"
+        stopOnFailure="true">
+
+    <testsuites>
+        <testsuite name="Dplr">
+            <directory>tests/Dplr/Tests</directory>
+        </testsuite>
+    </testsuites>
+
+    <filter>
+        <whitelist>
+            <directory suffix=".php">./src/Dplr</directory>
+        </whitelist>
+    </filter>
+</phpunit>

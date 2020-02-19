@@ -1,0 +1,16 @@
+version: "3.1"
+services:
+    dplr:
+        build: docker/images/dplr
+        working_dir: /var/www/dplr
+        volumes:
+            - ./:/var/www/dplr
+        environment:
+            - HOME=/var/www/dplr
+            - COMPOSER_HOME=~/.composer
+    remote_1:
+        build: docker/images/remote
+    remote_2:
+        build: docker/images/remote
+    remote_3:
+        build: docker/images/remote

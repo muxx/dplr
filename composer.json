@@ -12,7 +12,7 @@
         }
     ],
     "require": {
-        "php": ">=7.1",
+        "php": ">=7.3",
         "ext-json": "*"
     },
     "autoload": {
@@ -20,7 +20,13 @@
             "Dplr": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-0": {
+            "Dplr": "tests/"
+        }
+    },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^2.15"
+        "friendsofphp/php-cs-fixer": "^2.15",
+        "phpunit/phpunit": "^8.5"
     }
 }
