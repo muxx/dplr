@@ -118,6 +118,56 @@ class DplrTest extends TestCase
         $this->assertCount(1, $d->getFailed());
     }
 
+    public function testMultiThread(): void
+    {
+        $d = self::getDplr();
+
+        $d
+            ->command('ls -a', 'job')
+            ->command('pwd', 'all')
+            ->newThread()
+            ->command('cd /var', 'app')
+            ->command('echo "abba"', 'app')
+        ;
+
+        $this->assertTrue($d->hasTasks());
+
+        $output = '';
+        $d->run(function (string $s) use (&$output) {
+            $output .= $s;
+        });
+
+        $this->assertTrue($d->isSuccessful());
+        $this->assertFalse($d->hasTasks());
+        $this->assertEquals(
+            "CMD ls -a \nCMD cd /var ...\nCMD pwd \nCMD echo \"abba\" .....\n",
+            $output
+        );
+
+        $report = $d->getReport();
+        $this->assertEquals(8, $report['total']);
+        $this->assertEquals(8, $report['successful']);
+        $this->assertEquals(0, $report['failed']);
+
+        $reports = $d->getReports();
+
+        /** @var TaskReport $report */
+        $report = $reports[0];
+        $this->assertEquals(".\n..\n.ssh\n", $report->getOutput());
+
+        for ($i = 6; $i < 8; ++$i) {
+            /** @var TaskReport $report */
+            $report = $reports[$i];
+            $this->assertEquals("abba\n", $report->getOutput());
+        }
+
+        for ($i = 3; $i < 6; ++$i) {
+            /** @var TaskReport $report */
+            $report = $reports[$i];
+            $this->assertEquals("/root\n", $report->getOutput());
+        }
+    }
+
     private static function getFixturesPath(): string
     {
         return realpath(__DIR__ . '/../Fixtures');
