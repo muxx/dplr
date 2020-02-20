@@ -58,7 +58,6 @@ echo sprintf(
     $report['timers']['execution']
 );
 ```
-<a name="installation"></a>
 ## Installation
 
 Use composer to install **dplr**:
@@ -69,10 +68,8 @@ Use composer to install **dplr**:
 ```
 **Important**: `dplr` requires [GoSSHa](https://github.com/YuriyNasretdinov/GoSSHa).
 
-<a name="documentation"></a>
 ## Documentation
 
-<a name="initialization"></a>
 ### Initialization
 
 Initialization of ssh authorization by key:
@@ -84,7 +81,6 @@ $dplr = new Dplr\Dplr('ssh-user', '/path/to/GoSSHa');
 $dplr = new Dplr\Dplr('ssh-user', '/path/to/GoSSHa', '/path/to/public.key');
 ```
 
-<a name="register-servers"></a>
 ### Register servers
 
 Add multiply servers with adding in different group. Adding to groups allows you to execute tasks on servers of certain group.
@@ -95,7 +91,6 @@ $dplr->addServer('1.2.3.6', ['app', 'cache']); // Add server IP 1.2.3.6 with add
 $dplr->addServer('1.2.3.7:2222', ['cache']); // Add server IP 1.2.3.7 and ssh port 2222 with adding to group 'cache'
 ```
 
-<a name="register-tasks"></a>
 ### Register tasks
 
 `dplr` allows to register two types of tasks:
@@ -129,7 +124,6 @@ $dplr
 
 In example above command `app build` will be executed on all servers. After that commands `app init --mode=job` and `app init --mode=app` will be executed on the servers of groups `job` and `front` in parallel. At the end command `app run` will be executed on the servers of group `front`.
 
-<a name="running"></a>
 ### Running
 
 Running is simple:
@@ -153,7 +147,6 @@ $dplr->run(function($step) {
 
 Each dot at the end of task lines means executing of the one action (upload, command) on the certain server. Mark `E` is indicator of failed executing. Mark `J` is indicator of json parsing error. Mark `T` is indicator of executing timeout.
 
-<a name="result-processing"></a>
 ### Result processing
 
 You can get the execution review or detail information about each task execution.
