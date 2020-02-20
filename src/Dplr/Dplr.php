@@ -366,7 +366,7 @@ class Dplr
             $pl = sprintf('%s -l %s', $this->gosshaPath, $this->user);
         }
 
-        $descriptorspec = [
+        $descriptorSpec = [
             0 => ['pipe', 'r'],
             1 => ['pipe', 'w'],
             2 => ['pipe', 'w'],
@@ -377,7 +377,7 @@ class Dplr
 
         // run GoSSHa
         foreach ($this->tasks as $i => $thread) {
-            $processes[$i] = proc_open($pl, $descriptorspec, $pipes[$i]);
+            $processes[$i] = proc_open($pl, $descriptorSpec, $pipes[$i]);
             if (!is_resource($processes[$i])) {
                 throw new RuntimeException('Can not run GoSSHa.');
             }
