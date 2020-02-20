@@ -14,6 +14,9 @@ return Config::create()
         '@Symfony' => true,
         '@Symfony:risky' => true,
 
+        // exceptions
+        'single_line_throw' => false,
+
         // php file
         'concat_space' => ['spacing' => 'one'],
 
