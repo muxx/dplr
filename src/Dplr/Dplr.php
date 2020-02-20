@@ -21,29 +21,14 @@ class Dplr
     private const STATE_INIT = 'init';
     private const STATE_RUNNING = 'running';
 
-    /**
-     * @var array
-     */
     protected $servers = [];
 
-    /**
-     * @var array
-     */
     protected $tasks = [];
 
-    /**
-     * @var int
-     */
-    protected $tasksThread = 0;
+    protected $multipleThread = -1;
 
-    /**
-     * @var array
-     */
     protected $reports = [];
 
-    /**
-     * @var array
-     */
     protected $timers = [];
 
     /**
@@ -61,13 +46,9 @@ class Dplr
      */
     protected $gosshaPath;
 
-    /**
-     * @var int
-     */
-    protected $defaultTimeout;
+    protected $defaultTimeout = self::DEFAULT_TIMEOUT;
 
-    // dplr state
-    protected $state;
+    protected $state = self::STATE_INIT;
 
     public function __construct(string $user, string $gosshaPath, string $publicKey = null)
     {
@@ -76,15 +57,14 @@ class Dplr
         $this->gosshaPath = $gosshaPath;
 
         $this->resetTasks();
-        $this->state = self::STATE_INIT;
-
-        $this->defaultTimeout = self::DEFAULT_TIMEOUT;
     }
 
     protected function resetTasks(): void
     {
-        $this->tasks = [[]];
-        $this->tasksThread = 0;
+        $this->tasks = [
+            [],
+        ];
+        $this->multipleThread = -1;
     }
 
     public function hasTasks(): bool
@@ -179,17 +159,54 @@ class Dplr
     }
 
     /*
-     * Creating new thread.
+     * Start the multiple command chain which have to execute in parallel.
      */
-    public function newThread(): self
+    public function multi(): self
     {
-        // if current thread is empty, use it
-        if (!count($this->tasks[$this->tasksThread])) {
+        $this->multipleThread = 0;
+
+        return $this;
+    }
+
+    /*
+     * End the multiple command chain
+     */
+    public function end(): self
+    {
+        $this->multipleThread = -1;
+
+        return $this;
+    }
+
+    private function addTask(Task $task): self
+    {
+        if (-1 === $this->multipleThread) {
+            $this->tasks[0][] = $task;
+
             return $this;
         }
 
-        ++$this->tasksThread;
-        $this->tasks[$this->tasksThread] = [];
+        // fill previous steps by empty tasks to sync with the main thread
+        if ($this->multipleThread > 0) {
+            // init thread if not exists
+            if (!isset($this->tasks[$this->multipleThread])) {
+                $this->tasks[$this->multipleThread] = [];
+            }
+
+            $mainThreadCount = count($this->tasks[0]);
+            $currentThreadCount = count($this->tasks[$this->multipleThread]);
+            if ($mainThreadCount <= $currentThreadCount) {
+                throw new RuntimeException(sprintf('Thread #%d is bigger than main thread', $this->multipleThread));
+            }
+
+            if ($currentThreadCount < $mainThreadCount - 1) {
+                for ($i = $currentThreadCount; $i < $mainThreadCount - 1; ++$i) {
+                    $this->tasks[$this->multipleThread][] = null;
+                }
+            }
+        }
+
+        $this->tasks[$this->multipleThread++][] = $task;
 
         return $this;
     }
@@ -216,7 +233,7 @@ class Dplr
             'Timeout' => ($timeout > 0 ? $timeout : $this->defaultTimeout) * 1000,
         ];
 
-        $this->tasks[$this->tasksThread][] = new Task($data);
+        $this->addTask(new Task($data));
 
         return $this;
     }
@@ -244,7 +261,7 @@ class Dplr
             'Timeout' => ($timeout > 0 ? $timeout : $this->defaultTimeout) * 1000,
         ];
 
-        $this->tasks[$this->tasksThread][] = new Task($data);
+        $this->addTask(new Task($data));
 
         return $this;
     }
@@ -257,6 +274,7 @@ class Dplr
         $this->state = self::STATE_RUNNING;
 
         $this->runTasks($callback);
+        $this->resetTasks();
 
         $this->state = self::STATE_INIT;
 
@@ -370,7 +388,7 @@ class Dplr
         $pipes = array_fill(0, count($this->tasks), []);
         $processes = [];
 
-        // run GoSSHa
+        // run GoSSHa instance for each thread
         foreach ($this->tasks as $i => $thread) {
             $processes[$i] = proc_open($pl, $descriptorSpec, $pipes[$i]);
             if (!is_resource($processes[$i])) {
@@ -385,7 +403,7 @@ class Dplr
             // send command
             $k = 0;
             foreach ($this->tasks as $i => $thread) {
-                if (!isset($thread[$j])) {
+                if (!isset($thread[$j]) || !$thread[$j]) {
                     continue;
                 }
 
@@ -400,7 +418,7 @@ class Dplr
 
             // read replies
             foreach ($this->tasks as $i => $thread) {
-                if (!isset($thread[$j])) {
+                if (!isset($thread[$j]) || !$thread[$j]) {
                     continue;
                 }
 
@@ -463,7 +481,5 @@ class Dplr
         foreach ($processes as $process) {
             proc_close($process);
         }
-
-        $this->resetTasks();
     }
 }

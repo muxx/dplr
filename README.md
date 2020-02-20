@@ -112,7 +112,22 @@ $dplr
     ;
 ```
 
-In example above file `parameters.yml` will be upload on all servers simultaneously and in parallel. Second task executes only on servers from group `app` (`1.2.3.5` and `1.2.3.6`) simultaneously. For second task defined execution timeouts (15 seconds).
+In example above file `parameters.yml` will be uploaded on all servers simultaneously and in parallel. Second task executes only on servers from group `app` (`1.2.3.5` and `1.2.3.6`) in parallel. For second task defined execution timeouts (15 seconds).
+
+Sometimes you have to execute different task in parallel. For this case `Dplr` has multithread mode.
+
+```php
+$dplr
+    ->command('app build')
+    ->multi()
+        ->command('app init --mode=job', 'job')
+        ->command('app init --mode=app', 'front')
+    ->end()
+    ->command('app run', 'front')
+;
+```
+
+In example above command `app build` will be executed on all servers. After that commands `app init --mode=job` and `app init --mode=app` will be executed on the servers of groups `job` and `front` in parallel. At the end command `app run` will be executed on the servers of group `front`.
 
 <a name="running"></a>
 ### Running

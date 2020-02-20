@@ -17,6 +17,7 @@ class DplrTest extends TestCase
     {
         $d = self::getDplr();
 
+        $this->assertEquals(3600, $d->getDefaultTimeout());
         $d->setDefaultTimeout(60);
         $this->assertEquals(60, $d->getDefaultTimeout());
 
@@ -123,11 +124,15 @@ class DplrTest extends TestCase
         $d = self::getDplr();
 
         $d
-            ->command('ls -a', 'job')
-            ->command('pwd', 'all')
-            ->newThread()
-            ->command('cd /var', 'app')
-            ->command('echo "abba"', 'app')
+            ->command('ps', 'job')
+            ->multi()
+                ->command('ls -a', 'job')
+                ->command('cd /var', 'app')
+            ->end()
+            ->multi()
+                ->command('pwd', 'all')
+                ->command('echo "abba"', 'app')
+            ->end()
         ;
 
         $this->assertTrue($d->hasTasks());
@@ -140,28 +145,28 @@ class DplrTest extends TestCase
         $this->assertTrue($d->isSuccessful());
         $this->assertFalse($d->hasTasks());
         $this->assertEquals(
-            "CMD ls -a \nCMD cd /var ...\nCMD pwd \nCMD echo \"abba\" .....\n",
+            "CMD ps .\nCMD ls -a \nCMD cd /var ...\nCMD pwd \nCMD echo \"abba\" .....\n",
             $output
         );
 
         $report = $d->getReport();
-        $this->assertEquals(8, $report['total']);
-        $this->assertEquals(8, $report['successful']);
+        $this->assertEquals(9, $report['total']);
+        $this->assertEquals(9, $report['successful']);
         $this->assertEquals(0, $report['failed']);
 
         $reports = $d->getReports();
 
         /** @var TaskReport $report */
-        $report = $reports[0];
+        $report = $reports[1];
         $this->assertEquals(".\n..\n.ssh\n", $report->getOutput());
 
-        for ($i = 6; $i < 8; ++$i) {
+        for ($i = 7; $i < 9; ++$i) {
             /** @var TaskReport $report */
             $report = $reports[$i];
             $this->assertEquals("abba\n", $report->getOutput());
         }
 
-        for ($i = 3; $i < 6; ++$i) {
+        for ($i = 4; $i < 7; ++$i) {
             /** @var TaskReport $report */
             $report = $reports[$i];
             $this->assertEquals("/root\n", $report->getOutput());
