@@ -126,8 +126,7 @@ class Dplr
     /**
      * Add server for deploying.
      *
-     * @param string            $serverName
-     * @param string|array|null $groups     (default: null)
+     * @param string|array|null $groups (default: null)
      */
     public function addServer(string $serverName, $groups = null): self
     {
@@ -142,7 +141,7 @@ class Dplr
         return $this;
     }
 
-    /**
+    /*
      * Return servers list.
      */
     public function getServers(): array
@@ -150,12 +149,8 @@ class Dplr
         return array_keys($this->servers);
     }
 
-    /**
+    /*
      * Return servers list of group.
-     *
-     * @param string $group
-     *
-     * @return array
      */
     public function getServersByGroup(string $group): array
     {
