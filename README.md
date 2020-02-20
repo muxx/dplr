@@ -104,12 +104,12 @@ $path = '/home/webmaster/project';
 $dplr
     ->upload("$local/share/parameters.yml", "$path/app/config/parameters.yml")
     ->command("cd $path && ./app/console cache:clear --env=prod --no-debug", 'app', 15)
-    ;
+;
 ```
 
 In example above file `parameters.yml` will be uploaded on all servers simultaneously and in parallel. Second task executes only on servers from group `app` (`1.2.3.5` and `1.2.3.6`) in parallel. For second task defined execution timeouts (15 seconds).
 
-Sometimes you have to execute different task in parallel. For this case `Dplr` has multithread mode.
+Sometimes you have to execute different tasks in parallel. For this case `Dplr` has multithread mode.
 
 ```php
 $dplr
