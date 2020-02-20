@@ -1,5 +1,7 @@
 ## dplr
 
+![](https://github.com/muxx/dplr/workflows/CI/badge.svg)
+
 Object oriented deployer based on [GoSSHa](https://github.com/YuriyNasretdinov/GoSSHa) which allows to execute tasks simultaneously and in parallel. Simple and fast. 
 
 * [Installation](#installation)
