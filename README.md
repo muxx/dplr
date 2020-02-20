@@ -195,5 +195,6 @@ Execute the commands below to run the tests.
 ```shell script
 make sshkeygen
 docker-compose up -d
+make composer
 make check
 ```

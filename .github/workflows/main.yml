@@ -1,0 +1,38 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Generate ssh keygen for the containers interaction
+      run: make sshkeygen
+
+    - name: Up containers
+      run: docker-compose up -d
+
+    - name: Cache vendors
+      uses: actions/cache@v1
+      env:
+        cache-name: cache-vendors
+      with:
+        path: ~/vendor
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: Install vendors
+      run: make composer
+
+    - name: Check with php-cs-fixer
+      run: docker-compose run --rm --no-deps dplr vendor/bin/php-cs-fixer fix --dry-run --using-cache=no --show-progress=none -v
+
+    - name: Run tests
+      run: docker-compose run --rm --no-deps dplr vendor/bin/phpunit

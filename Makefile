@@ -10,4 +10,7 @@ fixer:
 phpunit:
 	@$(PHP) vendor/bin/phpunit
 
+composer:
+	@$(PHP) composer install -o -n --no-ansi
+
 check: fixer phpunit
