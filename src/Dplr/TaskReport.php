@@ -92,7 +92,7 @@ class TaskReport
     public function getErrorOutput(): ?string
     {
         if (isset($this->data['Stderr'])) {
-            return $this->data['Stderr'] ?: $this->data['Stdout'];
+            return $this->data['Stderr'];
         }
 
         if (isset($this->data['ErrorMsg'])) {
