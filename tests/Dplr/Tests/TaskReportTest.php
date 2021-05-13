@@ -66,4 +66,35 @@ class TaskReportTest extends TestCase
         $this->assertNull($taskReport->getErrorOutput());
         $this->assertEquals('output', $taskReport->getOutput());
     }
+
+    public function testNotSuccessfulWithoutStdout()
+    {
+        $taskReport = new TaskReport(
+            [
+                'Type' => TaskReport::TYPE_REPLY,
+                'Success' => false,
+                'Stderr' => 'error',
+            ],
+            new Task(['Action' => 'ssh', 'Cmd' => 'ls -al'])
+        );
+
+        $this->assertFalse($taskReport->isSuccessful());
+        $this->assertEquals('error', $taskReport->getErrorOutput());
+        $this->assertNull($taskReport->getOutput());
+    }
+
+    public function testNotSuccessfulWithoutStderr()
+    {
+        $taskReport = new TaskReport(
+            [
+                'Type' => TaskReport::TYPE_REPLY,
+                'Success' => false,
+            ],
+            new Task(['Action' => 'ssh', 'Cmd' => 'ls -al'])
+        );
+
+        $this->assertFalse($taskReport->isSuccessful());
+        $this->assertNull($taskReport->getErrorOutput());
+        $this->assertNull($taskReport->getOutput());
+    }
 }
