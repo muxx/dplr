@@ -281,8 +281,10 @@ class Dplr
         return $this;
     }
 
-    /*
+    /**
      * Check that all task executed successfully.
+     *
+     * @phpstan-impure
      */
     public function isSuccessful(): bool
     {
