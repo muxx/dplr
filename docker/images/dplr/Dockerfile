@@ -2,7 +2,7 @@ FROM golang:alpine AS gossha
 
 RUN apk --update --no-cache add --virtual build-dependencies \
     git make \
-    && go get github.com/YuriyNasretdinov/GoSSHa \
+    && go install github.com/YuriyNasretdinov/GoSSHa@latest \
     && apk update && apk del build-dependencies
 
 FROM php:7.3-alpine
