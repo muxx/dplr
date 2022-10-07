@@ -41,6 +41,12 @@ class Dplr
      */
     protected $publicKey;
 
+    /** @var int */
+    protected $maxSSHAgentConnections;
+
+    /** @var int */
+    protected $maxConcurrency;
+
     /**
      * @var string
      */
@@ -50,11 +56,18 @@ class Dplr
 
     protected $state = self::STATE_INIT;
 
-    public function __construct(string $user, string $gosshaPath, string $publicKey = null)
-    {
+    public function __construct(
+        string $user,
+        string $gosshaPath,
+        string $publicKey = null,
+        int $maxSSHAgentConnections = 128,
+        int $maxConcurrency = 0
+    ) {
         $this->user = $user;
         $this->publicKey = $publicKey;
         $this->gosshaPath = $gosshaPath;
+        $this->maxSSHAgentConnections = $maxSSHAgentConnections;
+        $this->maxConcurrency = $maxConcurrency;
 
         $this->resetTasks();
     }
@@ -376,9 +389,22 @@ class Dplr
         $this->reports = [];
 
         if ($this->publicKey) {
-            $pl = sprintf('%s -l %s -i %s', $this->gosshaPath, $this->user, $this->publicKey);
+            $pl = sprintf(
+                '%s -l %s -i %s -m %d -c %d',
+                $this->gosshaPath,
+                $this->user,
+                $this->publicKey,
+                $this->maxConcurrency,
+                $this->maxSSHAgentConnections
+            );
         } else {
-            $pl = sprintf('%s -l %s', $this->gosshaPath, $this->user);
+            $pl = sprintf(
+                '%s -l %s -m %d -c %d',
+                $this->gosshaPath,
+                $this->user,
+                $this->maxConcurrency,
+                $this->maxSSHAgentConnections
+            );
         }
 
         $descriptorSpec = [

@@ -173,6 +173,41 @@ class DplrTest extends TestCase
         }
     }
 
+    public function testLimitedConcurrency(): void
+    {
+        $d = new Dplr(self::USER, self::GOSSHA_PATH, self::SSH_KEY, 16, 1);
+        $d
+            ->addServer('remote_1', ['app', 'all'])
+            ->addServer('remote_2', ['app', 'all'])
+            ->addServer('remote_3', ['job', 'all'])
+        ;
+        $d->setDefaultTimeout(60);
+
+        $d->command('ls -a', 'all');
+        $this->assertTrue($d->hasTasks());
+
+        $output = '';
+        $d->run(function (string $s) use (&$output) {
+            $output .= $s;
+        });
+
+        $this->assertTrue($d->isSuccessful());
+        $this->assertFalse($d->hasTasks());
+        $this->assertEquals("CMD ls -a ...\n", $output);
+
+        $report = $d->getReport();
+        $this->assertEquals(3, $report['total']);
+        $this->assertEquals(3, $report['successful']);
+        $this->assertEquals(0, $report['failed']);
+
+        $this->assertCount(0, $d->getFailed());
+        $this->assertCount(3, $d->getReports());
+
+        foreach ($d->getReports() as $report) {
+            $this->assertTrue($report->isSuccessful());
+        }
+    }
+
     private static function getFixturesPath(): string
     {
         return realpath(__DIR__ . '/../Fixtures');
