@@ -208,6 +208,71 @@ class DplrTest extends TestCase
         }
     }
 
+    public function testShellErrorReporting(): void
+    {
+        $d = self::getDplr();
+        $d->upload(self::getFixturesPath() . '/files/1.txt', '/foo/1.txt', 'job');
+
+        $this->assertTrue($d->hasTasks());
+
+        $output = '';
+        $d->run(function (string $s) use (&$output) {
+            $output .= $s;
+        });
+
+        $this->assertFalse($d->isSuccessful());
+        $this->assertFalse($d->hasTasks());
+        $this->assertEquals(
+            'CPY ' . self::getFixturesPath() . "/files/1.txt -> /foo/1.txt E\n",
+            $output
+        );
+
+        $report = $d->getReport();
+        $this->assertEquals(1, $report['total']);
+        $this->assertEquals(0, $report['successful']);
+        $this->assertEquals(1, $report['failed']);
+
+        $report = $d->getReports()[0];
+        $this->assertEquals(
+            $report->getErrorOutput(),
+            "ash: can't create /foo/1.txt: nonexistent directory\n"
+        );
+    }
+
+    public function testGosshaErrorReporting(): void
+    {
+        $d = new Dplr(self::USER, self::GOSSHA_PATH, self::SSH_KEY);
+        $d
+            ->addServer('127.0.0.1', ['job', 'all'])
+        ;
+        $d->upload(self::getFixturesPath() . '/files/1.txt', '/foo/1.txt', 'job');
+
+        $this->assertTrue($d->hasTasks());
+
+        $output = '';
+        $d->run(function (string $s) use (&$output) {
+            $output .= $s;
+        });
+
+        $this->assertFalse($d->isSuccessful());
+        $this->assertFalse($d->hasTasks());
+        $this->assertEquals(
+            'CPY ' . self::getFixturesPath() . "/files/1.txt -> /foo/1.txt E\n",
+            $output
+        );
+
+        $report = $d->getReport();
+        $this->assertEquals(1, $report['total']);
+        $this->assertEquals(0, $report['successful']);
+        $this->assertEquals(1, $report['failed']);
+
+        $report = $d->getReports()[0];
+        $this->assertEquals(
+            'dial tcp 127.0.0.1:22: connect: connection refused',
+            $report->getErrorOutput()
+        );
+    }
+
     private static function getFixturesPath(): string
     {
         return realpath(__DIR__ . '/../Fixtures');
