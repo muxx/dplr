@@ -82,7 +82,7 @@ class TaskReport
 
     public function getOutput(): ?string
     {
-        if (!isset($this->data['Stdout'])) {
+        if (!isset($this->data['Stdout']) && $this->data['StdOut'] !== '') {
             return null;
         }
 
@@ -91,12 +91,12 @@ class TaskReport
 
     public function getErrorOutput(): ?string
     {
-        if (isset($this->data['Stderr'])) {
+        if (isset($this->data['Stderr']) && $this->data['Stderr'] !== '') {
             return $this->data['Stderr'];
         }
 
-        if (isset($this->data['ErrorMsg'])) {
-            return $this->data['ErrorMsg'];
+        if (isset($this->data['ErrMsg']) && $this->data['ErrMsg'] !== '') {
+            return $this->data['ErrMsg'];
         }
 
         return null;
