@@ -269,7 +269,7 @@ class DplrTest extends TestCase
         $report = $d->getReports()[0];
         $this->assertEquals(
             $report->getErrorOutput(),
-            "dial tcp: lookup remote_4: no such host"
+            'dial tcp: lookup remote_4: no such host'
         );
     }
 
