@@ -23,6 +23,7 @@ class Dplr
 
     protected $servers = [];
 
+    /** @var array<int, Task[]> */
     protected $tasks = [];
 
     protected $multipleThread = -1;
@@ -227,8 +228,13 @@ class Dplr
     /*
      * Adding command task.
      */
-    public function command(string $command, string $serverGroup = null, int $timeout = null): self
-    {
+    public function command(
+        string $command,
+        string $serverGroup = null,
+        int $timeout = null,
+        callable $onSuccess = null,
+        callable $onFailure = null
+    ): self {
         $servers = null;
         if (null !== $serverGroup) {
             $servers = $this->getServersByGroup($serverGroup);
@@ -246,7 +252,11 @@ class Dplr
             'Timeout' => ($timeout > 0 ? $timeout : $this->defaultTimeout) * 1000,
         ];
 
-        $this->addTask(new Task($data));
+        $this->addTask(new Task(
+            $data,
+            $onSuccess,
+            $onFailure,
+        ));
 
         return $this;
     }
@@ -254,8 +264,14 @@ class Dplr
     /*
      * Adding uploading task.
      */
-    public function upload(string $localFile, string $remoteFile, string $serverGroup = null, int $timeout = null): self
-    {
+    public function upload(
+        string $localFile,
+        string $remoteFile,
+        string $serverGroup = null,
+        int $timeout = null,
+        callable $onSuccess = null,
+        callable $onFailure = null
+    ): self {
         $servers = null;
         if (null !== $serverGroup) {
             $servers = $this->getServersByGroup($serverGroup);
@@ -274,7 +290,11 @@ class Dplr
             'Timeout' => ($timeout > 0 ? $timeout : $this->defaultTimeout) * 1000,
         ];
 
-        $this->addTask(new Task($data));
+        $this->addTask(new Task(
+            $data,
+            $onSuccess,
+            $onFailure,
+        ));
 
         return $this;
     }
@@ -457,9 +477,14 @@ class Dplr
                     if ('Reply' === $data['Type']) {
                         $report = new TaskReport($data, $task);
                         $this->reports[] = $report;
-
                         if ($callback) {
                             $callback($report->isSuccessful() ? '.' : 'E');
+                        }
+
+                        if ($report->isSuccessful()) {
+                            $task->callOnSuccess();
+                        } else {
+                            $task->callOnFailure();
                         }
                     } elseif ('UserError' === $data['Type']) {
                         $this->reports[] = new TaskReport($data, $task);
@@ -467,6 +492,7 @@ class Dplr
                         if ($callback) {
                             $callback('J');
                         }
+                        $task->callOnFailure();
                     } elseif ('FinalReply' === $data['Type']) {
                         $hosts = $data['TimedOutHosts'];
                         if (count($hosts)) {
@@ -482,6 +508,7 @@ class Dplr
                                 if ($callback) {
                                     $callback('T');
                                 }
+                                $task->callOnFailure();
                             }
                         }
                     }
