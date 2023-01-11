@@ -11,9 +11,14 @@ class Task implements \JsonSerializable
     public const ACTIONS = [self::ACTION_SSH, self::ACTION_SCP];
 
     protected $parameters = [];
+    protected $onSuccess;
+    protected $onFailure;
 
-    public function __construct(array $parameters)
-    {
+    public function __construct(
+        array $parameters,
+        callable $onSuccess = null,
+        callable $onFailure = null
+    ) {
         if (!isset($parameters['Action'])) {
             throw new \InvalidArgumentException('Not found `Action` parameter.');
         }
@@ -26,6 +31,8 @@ class Task implements \JsonSerializable
         }
 
         $this->parameters = $parameters;
+        $this->onSuccess = $onSuccess;
+        $this->onFailure = $onFailure;
     }
 
     public function __toString()
@@ -49,5 +56,19 @@ class Task implements \JsonSerializable
     public function jsonSerialize(): array
     {
         return $this->parameters;
+    }
+
+    public function callOnSuccess(): void
+    {
+        if (null !== $this->onSuccess) {
+            call_user_func($this->onSuccess);
+        }
+    }
+
+    public function callOnFailure(): void
+    {
+        if (null !== $this->onFailure) {
+            call_user_func($this->onFailure);
+        }
     }
 }

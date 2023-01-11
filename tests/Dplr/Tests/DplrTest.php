@@ -47,6 +47,43 @@ class DplrTest extends TestCase
         $this->assertEquals(".\n..\n.ssh\n", $d->getSingleReportOutput());
     }
 
+    public function testTaskCallbacks(): void
+    {
+        $successes = 0;
+        $failures = 0;
+        $success = function () use (&$successes) {
+            ++$successes;
+        };
+        $failure = function () use (&$failures) {
+            ++$failures;
+        };
+
+        $d = self::getDplr();
+        $d->command('id', 'app', null, $success, $failure);
+        $d->command('cat doesnotexist.log', 'app', null, $success, $failure);
+
+        $this->assertTrue($d->hasTasks());
+        $d->run();
+
+        $this->assertFalse($d->isSuccessful());
+        $this->assertFalse($d->hasTasks());
+        $this->assertEquals(2, $successes);
+        $this->assertEquals(2, $failures);
+
+        $report = $d->getReport();
+        $this->assertEquals(4, $report['total']);
+        $this->assertEquals(2, $report['successful']);
+        $this->assertEquals(2, $report['failed']);
+
+        $this->assertCount(2, $d->getFailed());
+        foreach ($d->getFailed() as $report) {
+            $this->assertEquals(
+                'CMD cat doesnotexist.log',
+                (string) $report->getTask()
+            );
+        }
+    }
+
     public function testExceptionOnSingleReportOutputWithSeveralTasks(): void
     {
         $this->expectException(OutOfRangeException::class);

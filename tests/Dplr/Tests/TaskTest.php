@@ -49,4 +49,34 @@ class TaskTest extends TestCase
             json_encode($task)
         );
     }
+
+    public function testCallbacks(): void
+    {
+        $success = false;
+        $failure = false;
+
+        $task = new Task(
+            [
+                'Action' => 'scp',
+                'Source' => '/home/user1/1.txt',
+                'Target' => '/home/user2/2.txt',
+            ],
+            function () use (&$success) {
+                $success = true;
+            },
+            function () use (&$failure) {
+                $failure = true;
+            }
+        );
+
+        $this->assertEquals('CPY /home/user1/1.txt -> /home/user2/2.txt', (string) $task);
+        $this->assertJsonStringEqualsJsonString(
+            '{"Action":"scp","Source":"/home/user1/1.txt","Target":"/home/user2/2.txt"}',
+            json_encode($task)
+        );
+        $task->callOnSuccess();
+        $this->assertTrue($success);
+        $task->callOnFailure();
+        $this->assertTrue($failure);
+    }
 }
