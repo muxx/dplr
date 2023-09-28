@@ -1,3 +1,4 @@
+ARG PHP_VERSION=7.4
 FROM golang:alpine AS gossha
 
 RUN apk --update --no-cache add --virtual build-dependencies \
@@ -5,7 +6,7 @@ RUN apk --update --no-cache add --virtual build-dependencies \
     && go install github.com/YuriyNasretdinov/GoSSHa@latest \
     && apk update && apk del build-dependencies
 
-FROM php:7.3-alpine
+FROM php:${PHP_VERSION}-alpine
 
 COPY --from=gossha /go/bin/GoSSHa /usr/local/bin/GoSSHa
 

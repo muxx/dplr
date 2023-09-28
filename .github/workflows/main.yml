@@ -4,10 +4,20 @@ on: [push]
 
 jobs:
   build:
+    strategy:
+      matrix:
+        version: ['7.4', '8.0', '8.1', '8.2']
+    env:
+        PHP_VERSION: ${{ matrix.version }}
 
     runs-on: ubuntu-latest
 
     steps:
+    - name: Set Swap Space
+      uses: pierotofy/set-swap-space@master
+      with:
+        swap-size-gb: 10
+
     - uses: actions/checkout@v2
 
     - name: Generate ssh keygen for the containers interaction
@@ -33,6 +43,7 @@ jobs:
 
     - name: Check with php-cs-fixer
       run: docker-compose run --rm --no-deps dplr vendor/bin/php-cs-fixer fix --dry-run --using-cache=no --show-progress=none -v
+      if: ${{ matrix.version == '7.4' }}
 
     - name: Run tests
       run: docker-compose run --rm --no-deps dplr vendor/bin/phpunit

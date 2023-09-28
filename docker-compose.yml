@@ -1,7 +1,10 @@
 version: "3.1"
 services:
     dplr:
-        build: docker/images/dplr
+        build:
+            context: ./docker/images/dplr
+            args:
+                PHP_VERSION: ${PHP_VERSION:-7.4}
         working_dir: /var/www/dplr
         volumes:
             - ./:/var/www/dplr
