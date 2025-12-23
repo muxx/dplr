@@ -220,6 +220,94 @@ class Dplr
         return $this;
     }
 
+    public function newTaskList(): TaskList
+    {
+        return new TaskList();
+    }
+
+    public function addTaskList(TaskList $taskList): self
+    {
+        if (-1 === $this->multipleThread) {
+            throw new \RuntimeException('task lists can be run only in threaded mode');
+        }
+
+        // Not sure...
+        // fill previous steps by empty tasks to sync with the main thread
+        // if ($this->multipleThread > 0) {
+        //     // init thread if not exists
+        //     if (!isset($this->tasks[$this->multipleThread])) {
+        //         $this->tasks[$this->multipleThread] = [];
+        //     }
+
+        //     $mainThreadCount = count($this->tasks[0]);
+        //     $currentThreadCount = count($this->tasks[$this->multipleThread]);
+        //     if ($mainThreadCount <= $currentThreadCount) {
+        //         throw new \RuntimeException(sprintf('Thread #%d is bigger than main thread', $this->multipleThread));
+        //     }
+
+        //     if ($currentThreadCount < $mainThreadCount - 1) {
+        //         for ($i = $currentThreadCount; $i < $mainThreadCount - 1; ++$i) {
+        //             $this->tasks[$this->multipleThread][] = null;
+        //         }
+        //     }
+        // }
+
+        $this->tasks[$this->multipleThread++] = $this->tasksFromTasksList($taskList);
+
+        return $this;
+    }
+
+    /** @return Task[] */
+    private function tasksFromTasksList(TaskList $taskList): array
+    {
+        $tasks = [];
+
+        foreach ($taskList->getTasks() as $t) {
+            $servers = null;
+            $serverGroup = $t->getServerGroup();
+            if (null !== $serverGroup) {
+                $servers = $this->getServersByGroup($serverGroup);
+                if (!count($servers)) {
+                    throw new \InvalidArgumentException(sprintf('Not found servers for group "%s"', $serverGroup));
+                }
+            }
+
+            switch (true) {
+                case $t instanceof PreProcessedUpload:
+                    $data = [
+                        'Action' => Task::ACTION_SCP,
+                        'Source' => $t->getSource(),
+                        'Target' => $t->getTarget(),
+                        'Hosts' => $serverGroup ? $servers : $this->getServers(),
+                        'Timeout' => ($t->getTimeout() > 0 ? $t->getTimeout() : $this->defaultTimeout) * 1000,
+                    ];
+                    break;
+
+                case $t instanceof PreProcessedCommand:
+                    $data = [
+                        'Action' => Task::ACTION_SSH,
+                        'Cmd' => $t->getCommand(),
+                        'Hosts' => $serverGroup ? $servers : $this->getServers(),
+                        'Timeout' => ($t->getTimeout() > 0 ? $t->getTimeout() : $this->defaultTimeout) * 1000,
+                    ];
+                    break;
+
+                default:
+                    throw new \RuntimeException(\sprintf(
+                        'unknown task type: %s', gettype($t),
+                    ));
+            }
+
+            $tasks[] = new Task(
+                $data,
+                $t->getOnSuccess(),
+                $t->getOnFailure(),
+            );
+        }
+
+        return $tasks;
+    }
+
     /*
      * Adding command task.
      */

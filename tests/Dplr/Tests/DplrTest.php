@@ -209,6 +209,104 @@ class DplrTest extends TestCase
         }
     }
 
+    public function testMultiThreadOrderMismatch(): void
+    {
+        $d = new Dplr(self::USER, self::GOSSHA_PATH, self::SSH_KEY);
+
+        $d
+            ->addServer('remote_1', ['remote_1'])
+            ->addServer('remote_2', ['remote_2'])
+            ->addServer('remote_3', ['remote_3'])
+        ;
+
+        $d->multi();
+        foreach (['remote_1', 'remote_2', 'remote_3'] as $srv) {
+            $d->command('sleep 1', $srv);
+            $d->command('echo ' . $srv, $srv);
+        }
+        $d->end();
+
+        $this->assertTrue($d->hasTasks());
+
+        $output = '';
+        $d->run(function (string $s) use (&$output) {
+            $output .= $s;
+        });
+
+        $this->assertTrue($d->isSuccessful());
+        $this->assertFalse($d->hasTasks());
+        $this->assertEquals(
+            "CMD sleep 1 \nCMD echo remote_1 \nCMD sleep 1 \nCMD echo remote_2 \nCMD sleep 1 \nCMD echo remote_3 ......\n",
+            $output
+        );
+
+        $report = $d->getReport();
+        $this->assertEquals(6, $report['total']);
+        $this->assertEquals(6, $report['successful']);
+        $this->assertEquals(0, $report['failed']);
+    }
+
+    public function testMultiTaskList(): void
+    {
+        $d = new Dplr(self::USER, self::GOSSHA_PATH, self::SSH_KEY);
+
+        $d
+            ->addServer('remote_1', ['remote_1'])
+            ->addServer('remote_2', ['remote_2'])
+            ->addServer('remote_3', ['remote_3'])
+        ;
+
+        $d->multi();
+        $d->addTaskList(
+            $d->newTaskList()
+            ->command('echo r11', 'remote_1')
+            ->command('echo r12', 'remote_1')
+            ->command('echo r13', 'remote_1')
+        );
+        $d->addTaskList(
+            $d->newTaskList()
+            ->command('echo r21', 'remote_2')
+            ->command('echo r22', 'remote_2')
+        );
+        $d->addTaskList(
+            $d->newTaskList()
+            ->command('echo r31', 'remote_3')
+        );
+        $d->end();
+
+        $output = '';
+        $d->run(function (string $s) use (&$output) {
+            $output .= $s;
+        });
+
+        $this->assertTrue($d->isSuccessful());
+        $this->assertFalse($d->hasTasks());
+        $this->assertEquals(
+            "CMD echo r11 \nCMD echo r21 \nCMD echo r31 ...\nCMD echo r12 \nCMD echo r22 ..\nCMD echo r13 .\n",
+            $output
+        );
+
+        $report = $d->getReport();
+        $this->assertEquals(6, $report['total']);
+        $this->assertEquals(6, $report['successful']);
+        $this->assertEquals(0, $report['failed']);
+
+        $reports = [
+            'r11',
+            'r21',
+            'r31',
+            'r12',
+            'r22',
+            'r13',
+        ];
+        foreach ($d->getReports() as $idx => $report) {
+            $this->assertEquals(
+                $reports[$idx],
+                trim($report->getOutput()),
+            );
+        }
+    }
+
     public function testLimitedConcurrency(): void
     {
         $d = new Dplr(self::USER, self::GOSSHA_PATH, self::SSH_KEY, 16, 1);
